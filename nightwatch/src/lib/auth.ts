@@ -48,7 +48,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.onboardingDone = (user as any).onboardingDone;
       }
       if (trigger === "update" && token.id) {
-        const dbUser = await prisma.user.findUnique({ where: { id: token.id } });
+        const dbUser = await prisma.user.findUnique({ where: { id: token.id as string } });
         if (dbUser) {
           token.onboardingDone = dbUser.onboardingDone;
         }
