@@ -21,25 +21,20 @@ export function PwaBanner() {
       window.matchMedia("(display-mode: standalone)").matches ||
       ("standalone" in window.navigator && Boolean(window.navigator.standalone));
 
-    if (standalone || pwaBannerDismissed) return;
+    if (standalone) return;
 
     const ua = window.navigator.userAgent.toLowerCase();
     const isiOS = /iphone|ipad|ipod/.test(ua);
     setIsIos(isiOS);
 
-    try {
-      const visited = localStorage.getItem("nw-visited");
-      if (!visited) {
-        localStorage.setItem("nw-visited", "1");
-      } else if (isiOS) {
-        setIsVisible(true);
-      }
-    } catch {}
+    if (isiOS) {
+      if (!pwaBannerDismissed) setIsVisible(true);
+    }
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setDeferredPrompt(event as BeforeInstallPromptEvent);
-      setIsVisible(true);
+      if (!pwaBannerDismissed) setIsVisible(true);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
