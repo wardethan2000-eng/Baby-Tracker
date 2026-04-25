@@ -64,10 +64,16 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const isOwner = await prisma.child.findFirst({
-      where: { id: log.childId, ownerId: userId },
+    const child = await prisma.child.findFirst({
+      where: {
+        id: log.childId,
+        OR: [
+          { ownerId: userId },
+          { sharedWith: { some: { userId, accepted: true, role: "CAREGIVER" } } },
+        ],
+      },
     });
-    if (!isOwner) {
+    if (!child) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { isOwner } from "@/lib/access";
+import { canAccessChild, isOwner } from "@/lib/access";
 import { sendInviteEmail } from "@/lib/resend";
 import crypto from "crypto";
 
@@ -11,8 +11,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
   const userId = session.user.id;
 
   try {
-    const owns = await isOwner(userId, params.id);
-    if (!owns) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const child = await canAccessChild(userId, params.id);
+    if (!child) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
     const shares = await prisma.childShare.findMany({
       where: { childId: params.id },

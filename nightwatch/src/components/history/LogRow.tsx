@@ -38,7 +38,13 @@ export function LogRow({ log, onEdit, onDelete }: LogRowProps) {
           <span className={`text-sm font-medium ${cfg.color}`}>{cfg.label}</span>
           <span className="text-xs text-text-muted">{formatTime(new Date(log.occurredAt))}</span>
         </div>
-        {getDetails() && <p className="text-xs text-text-secondary mt-0.5">{getDetails()}</p>}
+        <div className="flex items-center gap-2 mt-0.5">
+          {getDetails() && <span className="text-xs text-text-secondary">{getDetails()}</span>}
+          {log.user?.name && <span className="text-xs text-text-muted">by {log.user.name}</span>}
+        </div>
+        {log.createdAt && log.createdAt !== log.occurredAt && (
+          <span className="text-xs text-text-muted">Logged {formatTime(new Date(log.createdAt))}</span>
+        )}
       </div>
       <div className="relative">
         <button onClick={() => setMenuOpen(!menuOpen)} className="p-1 text-text-muted hover:text-text-primary rounded-lg">

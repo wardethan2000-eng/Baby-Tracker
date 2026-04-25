@@ -9,7 +9,7 @@ export async function GET(request: Request, { params }: { params: { token: strin
         expiresAt: { gt: new Date() },
       },
       include: {
-        child: { select: { name: true } },
+        child: { select: { name: true, ownerId: true } },
       },
     });
 
@@ -17,8 +17,11 @@ export async function GET(request: Request, { params }: { params: { token: strin
       return NextResponse.json({ error: "Invalid or expired invite" }, { status: 400 });
     }
 
+    const owner = await prisma.user.findUnique({ where: { id: share.child.ownerId }, select: { name: true } });
+
     return NextResponse.json({
       childName: share.child.name,
+      ownerName: owner?.name || "Someone",
       email: share.email,
       role: share.role,
       expired: false,

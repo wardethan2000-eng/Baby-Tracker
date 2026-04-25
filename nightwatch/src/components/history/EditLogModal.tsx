@@ -70,6 +70,9 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
   return (
     <Modal open={open} onClose={onClose} title="Edit Log">
       <form onSubmit={handleSubmit} className="space-y-4">
+        {log?.user?.name && (
+          <p className="text-sm text-text-secondary">Logged by {log.user.name}</p>
+        )}
         <Input label="Time" type="datetime-local" value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} required />
 
         {log?.type === "FEED" && (

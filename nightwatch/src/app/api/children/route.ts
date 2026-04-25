@@ -17,6 +17,7 @@ export async function GET() {
         ],
       },
       include: {
+        owner: { select: { id: true, name: true, email: true } },
         sharedWith: {
           include: { user: { select: { id: true, name: true, email: true } } },
         },

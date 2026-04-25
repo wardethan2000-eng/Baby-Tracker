@@ -247,7 +247,9 @@ export default function SettingsPage() {
 
       <section className="space-y-4">
         <h2 className="font-display text-lg font-semibold text-text-primary">My Children</h2>
-        {children.map((child: any) => (
+        {children.map((child: any) => {
+          const isOwner = child.ownerId === user?.id;
+          return (
           <div key={child.id} className="bg-surface rounded-2xl p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -255,18 +257,23 @@ export default function SettingsPage() {
                 <p className="text-sm text-text-secondary">
                   Born {formatDate(new Date(child.birthDate))} · {formatChildAge(new Date(child.birthDate))}
                 </p>
+                {!isOwner && child.owner && (
+                  <p className="text-xs text-text-muted mt-0.5">Shared by {child.owner.name}</p>
+                )}
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setEditingChild(child.id); setEditChildName(child.name); setEditChildDob(child.birthDate.split("T")[0]); }}
-                  className="p-2 text-text-secondary hover:text-primary rounded-lg"
-                >
-                  <Pencil size={16} />
-                </button>
-                <button onClick={() => setDeleteConfirm(child.id)} className="p-2 text-text-secondary hover:text-danger rounded-lg">
-                  <Trash2 size={16} />
-                </button>
-              </div>
+              {isOwner && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => { setEditingChild(child.id); setEditChildName(child.name); setEditChildDob(child.birthDate.split("T")[0]); }}
+                    className="p-2 text-text-secondary hover:text-primary rounded-lg"
+                  >
+                    <Pencil size={16} />
+                  </button>
+                  <button onClick={() => setDeleteConfirm(child.id)} className="p-2 text-text-secondary hover:text-danger rounded-lg">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              )}
             </div>
 
             <button
@@ -277,7 +284,7 @@ export default function SettingsPage() {
             </button>
 
             {expandedChild === child.id && (
-              <SharesSection childId={child.id} ownerId={child.ownerId} onInvite={() => { setShowInvite(child.id); setInviteEmail(""); setInviteRole("CAREGIVER"); }} onRevoke={(shareId) => revokeShare.mutate({ childId: child.id, shareId })} />
+              <SharesSection childId={child.id} ownerId={child.ownerId} currentUserId={user?.id} onInvite={() => { setShowInvite(child.id); setInviteEmail(""); setInviteRole("CAREGIVER"); }} onRevoke={(shareId) => revokeShare.mutate({ childId: child.id, shareId })} />
             )}
 
             <div className="mt-2">
@@ -286,7 +293,8 @@ export default function SettingsPage() {
               </button>
             </div>
           </div>
-        ))}
+          );
+        })}
         <Button variant="secondary" onClick={() => setShowAddChild(true)}>
           <Plus size={16} className="mr-1" /> Add Child
         </Button>
@@ -365,18 +373,20 @@ export default function SettingsPage() {
   );
 }
 
-function SharesSection({ childId, ownerId, onInvite, onRevoke }: { childId: string; ownerId: string; onInvite: () => void; onRevoke: (shareId: string) => void }) {
+function SharesSection({ childId, ownerId, currentUserId, onInvite, onRevoke }: { childId: string; ownerId: string; currentUserId: string; onInvite: () => void; onRevoke: (shareId: string) => void }) {
   const { data: shares = [] } = useQuery({
     queryKey: ["shares", childId],
     queryFn: () => api(`/api/children/${childId}/shares`),
   });
+
+  const isOwner = ownerId === currentUserId;
 
   return (
     <div className="mt-2 space-y-2">
       {shares.map((share: any) => (
         <div key={share.id} className="flex items-center justify-between text-sm bg-elevated rounded-xl px-3 py-2">
           <div>
-            <p className="text-text-primary">{share.email}</p>
+            <p className="text-text-primary">{share.user?.name || share.email}</p>
             <p className="flex items-center gap-2">
               <span className={share.role === "CAREGIVER" ? "text-primary" : "text-secondary"}>
                 {share.role === "CAREGIVER" ? "Caregiver" : "Viewer"}
@@ -386,12 +396,17 @@ function SharesSection({ childId, ownerId, onInvite, onRevoke }: { childId: stri
               </span>
             </p>
           </div>
-          <button onClick={() => onRevoke(share.id)} className="text-xs text-danger hover:underline">Revoke</button>
+          {isOwner && (
+            <button onClick={() => onRevoke(share.id)} className="text-xs text-danger hover:underline">Revoke</button>
+          )}
         </div>
       ))}
-      <button onClick={onInvite} className="text-sm text-primary flex items-center gap-1">
-        <UserPlus size={14} /> Invite Someone
-      </button>
+      {/* Also show child owner as a share entry */}
+      {isOwner && (
+        <button onClick={onInvite} className="text-sm text-primary flex items-center gap-1">
+          <UserPlus size={14} /> Invite Someone
+        </button>
+      )}
     </div>
   );
 }

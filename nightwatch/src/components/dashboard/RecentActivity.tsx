@@ -100,9 +100,14 @@ export default function RecentActivity() {
                       {formatRelativeTime(new Date(log.occurredAt))}
                     </span>
                   </div>
-                  {getDetail(log) && (
-                    <p className="text-xs text-text-secondary mt-0.5">{getDetail(log)}</p>
-                  )}
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {getDetail(log) && (
+                      <span className="text-xs text-text-secondary">{getDetail(log)}</span>
+                    )}
+                    {log.user?.name && (
+                      <span className="text-xs text-text-muted">by {log.user.name}</span>
+                    )}
+                  </div>
                 </div>
                 <button
                   onClick={() => deleteMutation.mutate(log.id)}
