@@ -202,7 +202,7 @@ export default function SettingsPage() {
     }
   };
 
-  const { canInstall, isIos, isInstalled, install } = usePwaInstall();
+  const { canInstall, isIos, isAndroid, isInstalled, install } = usePwaInstall();
 
   return (
     <div className="p-4 space-y-8 pb-24">
@@ -221,14 +221,28 @@ export default function SettingsPage() {
               </>
             ) : isIos ? (
               <div className="text-sm text-text-secondary space-y-2">
-                <p>To install NightWatch on iOS:</p>
+                <p>To install NightWatch on your iPhone:</p>
                 <ol className="list-decimal list-inside space-y-1">
-                  <li>Tap the <strong>Share</strong> button in Safari</li>
+                  <li>Open this page in <strong>Safari</strong></li>
+                  <li>Tap the <strong>Share</strong> button at the bottom</li>
+                  <li>Tap <strong>Add to Home Screen</strong></li>
+                </ol>
+              </div>
+            ) : isAndroid ? (
+              <div className="text-sm text-text-secondary space-y-2">
+                <p>To install NightWatch on your Android phone:</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Tap the <strong>three-dot menu</strong> in Chrome</li>
                   <li>Tap <strong>Add to Home Screen</strong></li>
                 </ol>
               </div>
             ) : (
-              <p className="text-sm text-text-secondary">Add this site to your home screen from your browser menu to install the app.</p>
+              <div className="text-sm text-text-secondary space-y-2">
+                <p>To install NightWatch:</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Use your browser&apos;s menu to <strong>Add to Home Screen</strong></li>
+                </ol>
+              </div>
             )}
           </div>
         </section>

@@ -50,9 +50,12 @@ export function usePwaInstall() {
     return false;
   };
 
+  const isAndroid = /android/.test(window.navigator.userAgent.toLowerCase());
+
   return {
     canInstall: !!deferredPrompt && !isInstalled,
     isIos,
+    isAndroid,
     isInstalled,
     install,
   };
