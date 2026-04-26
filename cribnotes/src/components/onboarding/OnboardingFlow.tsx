@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Moon, Baby, UserPlus, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Moon, Baby, UserPlus, Check, Smartphone, Share, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAppStore } from "@/lib/store";
@@ -24,6 +24,8 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
   const router = useRouter();
   const { update } = useSession();
   const { setSelectedChildId, setOnboarded } = useAppStore();
+
+  const totalSteps = 5;
 
   const handleAddChild = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,11 +83,20 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
     }
   };
 
+  const [platform, setPlatform] = useState<"ios" | "android" | "other">("other");
+
+  useEffect(() => {
+    const ua = window.navigator.userAgent.toLowerCase();
+    if (/iphone|ipad|ipod/.test(ua)) setPlatform("ios");
+    else if (/android/.test(ua)) setPlatform("android");
+    else setPlatform("other");
+  }, []);
+
   return (
     <div className="min-h-screen bg-base flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
-        <div className="mb-8 flex items-center justify-center gap-3">
-          {[1, 2, 3, 4].map((s) => (
+        <div className="mb-8 flex items-center justify-center gap-2">
+          {Array.from({ length: totalSteps }, (_, i) => i + 1).map((s) => (
             <div
               key={s}
               className={`h-1.5 rounded-full flex-1 transition-colors ${
@@ -95,14 +106,14 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
           ))}
         </div>
 
-        <div className="bg-surface rounded-2xl p-6">
+        <div className="bg-surface border border-border rounded-2xl p-6">
           {step === 1 && (
             <div className="text-center">
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <Moon className="text-primary" size={32} />
               </div>
               <h1 className="font-display text-2xl font-bold text-text-primary mb-2">Welcome to CribNotes</h1>
-              <p className="text-text-secondary mb-6">Track your baby&apos;s night activity, effortlessly</p>
+              <p className="text-text-secondary mb-6">Track your baby&apos;s activity, effortlessly</p>
               <Button full onClick={() => setStep(2)}>Let&apos;s get started</Button>
             </div>
           )}
@@ -162,23 +173,97 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
 
           {step === 4 && (
             <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-4">
+                <Smartphone className="text-secondary" size={32} />
+              </div>
+              <h2 className="font-display text-xl font-bold text-text-primary mb-2">Install the App</h2>
+              <p className="text-text-secondary mb-6">Add CribNotes to your home screen for quick, full-screen access.</p>
+
+              {platform === "ios" && (
+                <div className="bg-elevated rounded-2xl p-4 text-left space-y-3 mb-6">
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl mt-0.5">1</span>
+                    <p className="text-sm text-text-primary">Tap the <strong className="text-primary">Share</strong> button at the bottom of Safari</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl mt-0.5">2</span>
+                    <p className="text-sm text-text-primary">Scroll down and tap <strong className="text-primary">Add to Home Screen</strong></p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl mt-0.5">3</span>
+                    <p className="text-sm text-text-primary">Tap <strong className="text-primary">Add</strong> in the top right</p>
+                  </div>
+                </div>
+              )}
+
+              {platform === "android" && (
+                <div className="bg-elevated rounded-2xl p-4 text-left space-y-3 mb-6">
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl mt-0.5">1</span>
+                    <p className="text-sm text-text-primary">Tap the <strong className="text-primary">three-dot menu</strong> in the top right of Chrome</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl mt-0.5">2</span>
+                    <p className="text-sm text-text-primary">Tap <strong className="text-primary">Add to Home Screen</strong></p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl mt-0.5">3</span>
+                    <p className="text-sm text-text-primary">Tap <strong className="text-primary">Add</strong> to confirm</p>
+                  </div>
+                </div>
+              )}
+
+              {platform === "other" && (
+                <div className="bg-elevated rounded-2xl p-4 text-left space-y-3 mb-6">
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl mt-0.5">1</span>
+                    <p className="text-sm text-text-primary">Open your browser&apos;s menu or settings</p>
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <span className="text-xl mt-0.5">2</span>
+                    <p className="text-sm text-text-primary">Look for <strong className="text-primary">Add to Home Screen</strong> or <strong className="text-primary">Install App</strong></p>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <Button variant="ghost" onClick={() => setStep(3)}>Back</Button>
+                <Button full onClick={() => setStep(5)}>Next</Button>
+              </div>
+            </div>
+          )}
+
+          {step === 5 && (
+            <div className="text-center">
               <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-4">
                 <Check className="text-success" size={32} />
               </div>
-              <h2 className="font-display text-xl font-bold text-text-primary mb-2">You&apos;re all set, {userName}!</h2>
-              <div className="bg-elevated rounded-2xl p-4 mt-4 mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+              <h2 className="font-display text-xl font-bold text-text-primary mb-4">You&apos;re all set, {userName}!</h2>
+
+              <div className="space-y-3 mb-6">
+                <div className="bg-elevated rounded-2xl p-4 flex items-center gap-3 text-left">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <Baby className="text-primary" size={20} />
                   </div>
-                  <div className="text-left">
+                  <div>
                     <p className="font-semibold text-text-primary">{childName}</p>
                     <p className="text-sm text-text-secondary">
                       {childDob ? formatChildAge(new Date(childDob)) : ""}
                     </p>
                   </div>
                 </div>
+
+                <div className="bg-elevated rounded-2xl p-4 flex items-center gap-3 text-left">
+                  <div className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center shrink-0">
+                    <Share className="text-secondary" size={20} />
+                  </div>
+                  <div>
+                    <p className="text-sm text-text-primary font-medium">Share anytime from Settings</p>
+                    <p className="text-xs text-text-muted">You can always invite more people or manage sharing in Settings</p>
+                  </div>
+                </div>
               </div>
+
               <Button full onClick={finishOnboarding}>Start Tracking</Button>
             </div>
           )}
