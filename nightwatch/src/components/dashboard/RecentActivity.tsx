@@ -99,7 +99,7 @@ export default function RecentActivity() {
             const cfg = typeConfig[log.type] || typeConfig.WAKE;
             const Icon = cfg.icon;
             return (
-              <div key={log.id} className="bg-surface rounded-2xl p-3 flex items-center gap-3">
+              <div key={log.id} className="bg-surface border border-border rounded-2xl p-3 flex items-center gap-3">
                 <div className={`p-2 rounded-xl ${cfg.color}`}>
                   <Icon className="w-4 h-4" />
                 </div>

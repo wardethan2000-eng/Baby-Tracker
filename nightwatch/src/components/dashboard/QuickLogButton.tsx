@@ -47,7 +47,7 @@ const QuickLogButton = forwardRef<HTMLButtonElement, QuickLogButtonProps>(
           "min-w-[120px] min-h-[120px] sm:min-w-[140px] sm:min-h-[140px]",
           "rounded-3xl flex flex-col items-center justify-center gap-2",
           "transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary",
-          "bg-surface hover:bg-elevated",
+          "bg-surface border border-border hover:bg-elevated",
           c.shadow,
           c.text
         )}

@@ -60,28 +60,28 @@ export default function DailyStats() {
   return (
     <div className="grid grid-cols-2 gap-3 mt-4">
       {todayFeeds.length > 0 && (
-        <div className="bg-surface rounded-2xl p-3 text-center">
+        <div className="bg-surface border border-border rounded-2xl p-3 text-center">
           <p className="text-xs text-text-secondary">Fed</p>
           <p className="text-lg font-bold text-[#38bdf8]">{todayFeeds.length}x</p>
           <p className="text-xs text-text-muted">{totalFeedVolume > 0 ? `${totalFeedVolume.toFixed(1)} oz` : "\u2014"}</p>
         </div>
       )}
       {todayNurses.length > 0 && (
-        <div className="bg-surface rounded-2xl p-3 text-center">
+        <div className="bg-surface border border-border rounded-2xl p-3 text-center">
           <p className="text-xs text-text-secondary">Nursed</p>
           <p className="text-lg font-bold text-[#f472b6]">{todayNurses.length}x</p>
           <p className="text-xs text-text-muted">{totalNurseMinutes > 0 ? formatDuration(totalNurseMinutes) : "\u2014"}</p>
         </div>
       )}
       {todayPumps.length > 0 && (
-        <div className="bg-surface rounded-2xl p-3 text-center">
+        <div className="bg-surface border border-border rounded-2xl p-3 text-center">
           <p className="text-xs text-text-secondary">Pumped</p>
           <p className="text-lg font-bold text-[#a78bfa]">{todayPumps.length}x</p>
           <p className="text-xs text-text-muted">{totalPumpVolume > 0 ? `${totalPumpVolume.toFixed(1)} oz` : "\u2014"}</p>
         </div>
       )}
       {totalSleepMinutes > 0 && (
-        <div className="bg-surface rounded-2xl p-3 text-center">
+        <div className="bg-surface border border-border rounded-2xl p-3 text-center">
           <p className="text-xs text-text-secondary">Asleep</p>
           <p className="text-lg font-bold text-[#fbbf24]">{formatDuration(totalSleepMinutes)}</p>
           <p className="text-xs text-text-muted">{sleepStarts.length} nap{sleepStarts.length !== 1 ? "s" : ""}</p>

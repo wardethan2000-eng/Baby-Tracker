@@ -41,7 +41,7 @@ export function LogRow({ log, onEdit, onDelete }: LogRowProps) {
   };
 
   return (
-    <div className="bg-surface rounded-2xl p-3 flex items-center gap-3">
+    <div className="bg-surface border border-border rounded-2xl p-3 flex items-center gap-3">
       <span className="text-xl">{cfg.icon}</span>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
