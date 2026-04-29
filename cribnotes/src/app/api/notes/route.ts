@@ -7,6 +7,8 @@ import { canAccessChild, canWriteToChild, getChildRole } from "@/lib/access";
 import { createNoteSchema } from "@/lib/validations";
 
 type NoteAudience = "EVERYONE" | "PARENTS" | "CAREGIVERS" | "SPECIFIC";
+type NoteEditPermission = "CREATOR_ONLY" | "PARENTS" | "CAREGIVERS" | "EVERYONE";
+type PersonRole = "PARENT" | "CARETAKER" | "BABYSITTER";
 
 type RawNote = {
   id: string;
@@ -17,6 +19,7 @@ type RawNote = {
   purpose: string;
   audience: NoteAudience;
   attentionName: string | null;
+  editPermission: NoteEditPermission;
   pinned: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -28,7 +31,7 @@ type RawNote = {
 
 function isForUser(
   note: { audience: NoteAudience; attentionName: string | null },
-  role: "PARENT" | "CARETAKER" | "BABYSITTER" | null,
+  role: PersonRole | null,
   user: { name: string | null; email: string }
 ) {
   if (note.audience === "EVERYONE") return true;
@@ -43,7 +46,15 @@ function isForUser(
     .some((value) => value!.trim().toLowerCase() === attention);
 }
 
-function serializeNote(note: RawNote) {
+function canEditNote(note: { userId: string; editPermission: NoteEditPermission }, userId: string, role: PersonRole | null) {
+  if (note.userId === userId) return true;
+  if (note.editPermission === "EVERYONE") return true;
+  if (note.editPermission === "PARENTS") return role === "PARENT";
+  if (note.editPermission === "CAREGIVERS") return role === "CARETAKER" || role === "BABYSITTER";
+  return false;
+}
+
+function serializeNote(note: RawNote, context?: { userId: string; role: PersonRole | null }) {
   return {
     id: note.id,
     childId: note.childId,
@@ -53,6 +64,7 @@ function serializeNote(note: RawNote) {
     purpose: note.purpose,
     audience: note.audience,
     attentionName: note.attentionName,
+    editPermission: note.editPermission,
     pinned: note.pinned,
     createdAt: note.createdAt,
     updatedAt: note.updatedAt,
@@ -62,6 +74,8 @@ function serializeNote(note: RawNote) {
       : note.userDesignation === "CARETAKER"
         ? "Caretaker"
         : "Parent",
+    canEdit: context ? canEditNote(note, context.userId, context.role) : true,
+    canDelete: context ? note.userId === context.userId || context.role === "PARENT" : true,
   };
 }
 
@@ -101,6 +115,7 @@ export async function GET(request: Request) {
           n.purpose::text AS purpose,
           n.audience::text AS audience,
           n."attentionName",
+          n."editPermission"::text AS "editPermission",
           n.pinned,
           n."createdAt",
           n."updatedAt",
@@ -125,7 +140,7 @@ export async function GET(request: Request) {
       ? notes.filter((note) => isForUser(note, role, user)).slice(0, limit)
       : notes;
 
-    return NextResponse.json({ notes: filtered.map(serializeNote) });
+    return NextResponse.json({ notes: filtered.map((note) => serializeNote(note, { userId, role })) });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
@@ -155,6 +170,7 @@ export async function POST(request: Request) {
         purpose,
         audience,
         "attentionName",
+        "editPermission",
         pinned,
         "createdAt",
         "updatedAt"
@@ -168,6 +184,7 @@ export async function POST(request: Request) {
         ${data.purpose}::"NotePurpose",
         ${data.audience}::"NoteAudience",
         ${data.audience === "SPECIFIC" ? data.attentionName || null : null},
+        ${data.editPermission}::"NoteEditPermission",
         ${data.pinned ?? false},
         now(),
         now()
@@ -181,6 +198,7 @@ export async function POST(request: Request) {
         purpose::text AS purpose,
         audience::text AS audience,
         "attentionName",
+        "editPermission"::text AS "editPermission",
         pinned,
         "createdAt",
         "updatedAt",
@@ -190,7 +208,7 @@ export async function POST(request: Request) {
         (SELECT designation::text FROM "User" WHERE id = "Note"."userId") AS "userDesignation"
     `);
 
-    return NextResponse.json(serializeNote(note));
+    return NextResponse.json(serializeNote(note, { userId, role: await getChildRole(userId, data.childId) }));
   } catch (error: any) {
     if (error.name === "ZodError") {
       return NextResponse.json({ error: error.errors }, { status: 400 });

@@ -1,0 +1,4 @@
+CREATE TYPE "NoteEditPermission" AS ENUM ('CREATOR_ONLY', 'PARENTS', 'CAREGIVERS', 'EVERYONE');
+
+ALTER TABLE "Note"
+  ADD COLUMN "editPermission" "NoteEditPermission" NOT NULL DEFAULT 'CREATOR_ONLY';

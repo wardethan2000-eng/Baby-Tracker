@@ -66,6 +66,13 @@ enum NoteAudience {
   SPECIFIC
 }
 
+enum NoteEditPermission {
+  CREATOR_ONLY
+  PARENTS
+  CAREGIVERS
+  EVERYONE
+}
+
 model User {
   id            String    @id @default(uuid())
   email         String    @unique
@@ -151,6 +158,7 @@ model Note {
   purpose       NotePurpose  @default(GENERAL)
   audience      NoteAudience @default(EVERYONE)
   attentionName String?
+  editPermission NoteEditPermission @default(CREATOR_ONLY)
   pinned        Boolean      @default(false)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt

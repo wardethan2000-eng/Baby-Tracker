@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookOpen, MessageSquareText, Pin, Plus, Trash2 } from "lucide-react";
+import { BookOpen, MessageSquareText, Pencil, Pin, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,13 @@ const purposeStyles: Record<string, string> = {
 
 const audienceLabels = Object.fromEntries(audiences.map((item) => [item.value, item.label]));
 const purposeLabels = Object.fromEntries(purposes.map((item) => [item.value, item.label]));
+const editOptions = [
+  { value: "CREATOR_ONLY", label: "Only me" },
+  { value: "PARENTS", label: "Parents" },
+  { value: "CAREGIVERS", label: "Caretakers" },
+  { value: "EVERYONE", label: "Everyone" },
+];
+const editLabels = Object.fromEntries(editOptions.map((item) => [item.value, item.label]));
 
 export default function NotesPage() {
   const selectedChildId = useAppStore((s) => s.selectedChildId);
@@ -44,7 +51,9 @@ export default function NotesPage() {
   const [purpose, setPurpose] = useState("GENERAL");
   const [audience, setAudience] = useState("EVERYONE");
   const [attentionName, setAttentionName] = useState("");
+  const [editPermission, setEditPermission] = useState("CREATOR_ONLY");
   const [pinned, setPinned] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ["notes", selectedChildId],
@@ -60,21 +69,24 @@ export default function NotesPage() {
     setPurpose("GENERAL");
     setAudience("EVERYONE");
     setAttentionName("");
+    setEditPermission("CREATOR_ONLY");
     setPinned(false);
+    setEditingNoteId(null);
   };
 
-  const createMutation = useMutation({
+  const saveMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch("/api/notes", {
-        method: "POST",
+      const response = await fetch(editingNoteId ? `/api/notes/${editingNoteId}` : "/api/notes", {
+        method: editingNoteId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          childId: selectedChildId,
+          ...(!editingNoteId ? { childId: selectedChildId } : {}),
           title,
           body,
           purpose,
           audience,
           attentionName: attentionName || undefined,
+          editPermission,
           pinned,
         }),
       });
@@ -106,7 +118,19 @@ export default function NotesPage() {
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    createMutation.mutate();
+    saveMutation.mutate();
+  };
+
+  const startEdit = (note: any) => {
+    setEditingNoteId(note.id);
+    setTitle(note.title);
+    setBody(note.body);
+    setPurpose(note.purpose);
+    setAudience(note.audience);
+    setAttentionName(note.attentionName || "");
+    setEditPermission(note.editPermission || "CREATOR_ONLY");
+    setPinned(!!note.pinned);
+    setShowForm(true);
   };
 
   return (
@@ -119,12 +143,19 @@ export default function NotesPage() {
         <Button
           type="button"
           size="sm"
-          onClick={() => setShowForm((value) => !value)}
+          onClick={() => {
+            if (showForm) {
+              resetForm();
+              setShowForm(false);
+            } else {
+              setShowForm(true);
+            }
+          }}
           className="gap-2"
           disabled={!selectedChildId}
         >
           <Plus className="w-4 h-4" />
-          New
+          {showForm ? "Close" : "New"}
         </Button>
       </div>
 
@@ -148,7 +179,7 @@ export default function NotesPage() {
               rows={5}
               maxLength={2000}
               required
-              className="w-full rounded-2xl border border-border bg-base px-4 py-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-[#0f172a] placeholder:text-[#64748b] caret-primary focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
@@ -208,11 +239,30 @@ export default function NotesPage() {
             Pin this note near the top
           </label>
 
+          <div>
+            <p className="text-sm font-medium text-text-secondary mb-2">Who can edit</p>
+            <div className="grid grid-cols-2 gap-2">
+              {editOptions.map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => setEditPermission(item.value)}
+                  className={`px-3 py-2 rounded-2xl text-sm font-medium ${
+                    editPermission === item.value ? "bg-primary text-base" : "bg-base text-text-secondary"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-text-muted mt-2">Delete is limited to the note creator or a parent.</p>
+          </div>
+
           <div className="flex gap-2">
-            <Button type="submit" full disabled={createMutation.isPending || !selectedChildId}>
-              Save Note
+            <Button type="submit" full disabled={saveMutation.isPending || !selectedChildId}>
+              {editingNoteId ? "Update Note" : "Save Note"}
             </Button>
-            <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>
+            <Button type="button" variant="ghost" onClick={() => { resetForm(); setShowForm(false); }}>
               Cancel
             </Button>
           </div>
@@ -253,14 +303,28 @@ export default function NotesPage() {
                   </div>
                   <h2 className="font-display text-lg font-semibold text-text-primary break-words">{note.title}</h2>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => deleteMutation.mutate(note.id)}
-                  className="p-2 text-text-muted hover:text-danger transition-colors shrink-0"
-                  aria-label="Delete note"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-1 shrink-0">
+                  {note.canEdit && (
+                    <button
+                      type="button"
+                      onClick={() => startEdit(note)}
+                      className="p-2 text-text-muted hover:text-primary transition-colors"
+                      aria-label="Edit note"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                  )}
+                  {note.canDelete && (
+                    <button
+                      type="button"
+                      onClick={() => deleteMutation.mutate(note.id)}
+                      className="p-2 text-text-muted hover:text-danger transition-colors"
+                      aria-label="Delete note"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
 
               <p className="text-sm text-text-secondary whitespace-pre-wrap break-words mt-3">{note.body}</p>
@@ -271,6 +335,9 @@ export default function NotesPage() {
                   Left by {note.user?.name || note.user?.email || "Someone"} ({note.authorKind}) · {formatRelativeTime(new Date(note.createdAt))}
                 </span>
               </div>
+              <p className="text-xs text-text-muted mt-2">
+                Editable by {editLabels[note.editPermission] || "Only me"}
+              </p>
             </article>
           ))}
         </div>

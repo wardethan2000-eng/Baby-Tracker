@@ -65,8 +65,11 @@ export const createNoteSchema = z.object({
   purpose: z.enum(["GUIDE", "INSTRUCTION", "UPDATE", "QUESTION", "GENERAL"]).default("GENERAL"),
   audience: z.enum(["EVERYONE", "PARENTS", "CAREGIVERS", "SPECIFIC"]).default("EVERYONE"),
   attentionName: z.string().trim().max(100).optional(),
+  editPermission: z.enum(["CREATOR_ONLY", "PARENTS", "CAREGIVERS", "EVERYONE"]).default("CREATOR_ONLY"),
   pinned: z.boolean().optional(),
 });
+
+export const updateNoteSchema = createNoteSchema.omit({ childId: true }).partial();
 
 export const inviteSchema = z.object({
   childId: z.string().uuid(),
@@ -88,4 +91,5 @@ export type CreateChildInput = z.infer<typeof createChildSchema>;
 export type CreateLogInput = z.infer<typeof createLogSchema>;
 export type UpdateLogInput = z.infer<typeof updateLogSchema>;
 export type CreateNoteInput = z.infer<typeof createNoteSchema>;
+export type UpdateNoteInput = z.infer<typeof updateNoteSchema>;
 export type InviteInput = z.infer<typeof inviteSchema>;
