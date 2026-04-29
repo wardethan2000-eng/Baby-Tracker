@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { LogRow } from "@/components/history/LogRow";
@@ -73,7 +73,7 @@ export default function HistoryPage() {
   }, {});
 
   const formatDateHeading = (dateStr: string) => {
-    const date = new Date(dateStr);
+    const date = parseISO(dateStr);
     const today = new Date();
     if (format(date, "yyyy-MM-dd") === format(today, "yyyy-MM-dd")) return `Today — ${format(date, "MMM d, yyyy")}`;
     if (format(date, "yyyy-MM-dd") === format(subDays(today, 1), "yyyy-MM-dd")) return `Yesterday — ${format(date, "MMM d, yyyy")}`;
