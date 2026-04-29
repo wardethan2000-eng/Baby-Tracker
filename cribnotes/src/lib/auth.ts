@@ -10,6 +10,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/login",
     error: "/login",
   },
+  logger: {
+    // A JWTSessionError fires every request from a browser holding a session
+    // cookie encrypted with a previous NEXTAUTH_SECRET. The middleware already
+    // treats it as logged-out and redirects to /login, so suppress the spam.
+    error(error) {
+      if (error.name === "JWTSessionError") return;
+      console.error(error);
+    },
+  },
   providers: [
     Credentials({
       name: "credentials",
