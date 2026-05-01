@@ -3,7 +3,7 @@ const nextConfig = {
   async headers() {
     return [
       {
-        source: "/:serviceWorker(sw.js|push-sw.js|workbox-:hash.js)",
+        source: "/:path(sw.js)",
         headers: [
           { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
           { key: "Service-Worker-Allowed", value: "/" },
@@ -36,12 +36,4 @@ const nextConfig = {
   },
 };
 
-const withPWA = require("next-pwa")({
-  dest: "public",
-  register: true,
-  skipWaiting: true,
-  swSrc: "./src/service-worker.js",
-  disable: process.env.NODE_ENV === "development",
-});
-
-module.exports = withPWA(nextConfig);
+module.exports = nextConfig;

@@ -177,8 +177,6 @@ export default function SettingsPage() {
       return;
     }
 
-    // Kick off permission request immediately (synchronously) so iOS Safari
-    // keeps the user gesture context. Do NOT await anything before this.
     const permissionPromise = Notification.requestPermission();
 
     setIsSubscribing(true);
@@ -193,14 +191,12 @@ export default function SettingsPage() {
       const diagnostic = await getPushDiagnostics().catch(() => null);
       if (diagnostic) {
         setNotificationDebug([
-          `Supported: ${diagnostic.supported}`,
-          `Permission: ${diagnostic.notificationPermission}`,
-          `Installed mode: ${diagnostic.standalone}`,
-          `Controller: ${diagnostic.hasController}`,
+          `Registration: ${diagnostic.registrationExists || "none"}`,
           `Active: ${diagnostic.activeState || "none"}`,
-          `Waiting: ${diagnostic.waitingState || "none"}`,
           `Installing: ${diagnostic.installingState || "none"}`,
-          `Saved subscriptions: ${notificationPreferences?.subscriptionCount ?? 0}`,
+          `Waiting: ${diagnostic.waitingState || "none"}`,
+          `Controller: ${diagnostic.controllerState || "none"}`,
+          `Permission: ${diagnostic.notificationPermission || "none"}`,
         ].join(" | "));
       }
       toast.error(error.message || "Could not enable notifications");
