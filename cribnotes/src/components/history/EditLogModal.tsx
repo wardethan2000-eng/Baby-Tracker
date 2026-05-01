@@ -93,7 +93,7 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
 
         {log?.type === "FEED" && (
           <>
-            <Input label="Amount" type="number" step="0.5" value={feedAmount} onChange={(e) => setFeedAmount(e.target.value)} placeholder="3.5" />
+            <Input label="Amount" type="number" step="any" value={feedAmount} onChange={(e) => setFeedAmount(e.target.value)} placeholder="3.5" />
             <div>
               <p className="text-sm text-text-secondary mb-2">Unit</p>
               <div className="flex gap-2">
@@ -145,7 +145,7 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
 
         {log?.type === "PUMP" && (
           <div className="space-y-4">
-            <Input label="Amount" type="number" step="0.5" value={pumpAmount} onChange={(e) => setPumpAmount(e.target.value)} placeholder="3.5" />
+            <Input label="Amount" type="number" step="any" value={pumpAmount} onChange={(e) => setPumpAmount(e.target.value)} placeholder="3.5" />
             <div>
               <p className="text-sm text-text-secondary mb-2">Unit</p>
               <div className="flex gap-2">

@@ -71,7 +71,7 @@ export default function PumpDetailsSheet({ open, onClose, logId }: PumpDetailsSh
           <label className="block text-sm font-medium text-text-secondary mb-2">Amount</label>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setAmount((p) => Math.max(0, p - 0.5))}
+              onClick={() => setAmount((p) => Math.max(0, p - (unit === "OZ" ? 0.5 : 10)))}
               className="w-10 h-10 rounded-full bg-elevated text-text-primary flex items-center justify-center text-lg font-bold"
             >
               −
@@ -81,7 +81,7 @@ export default function PumpDetailsSheet({ open, onClose, logId }: PumpDetailsSh
               <span className="ml-1 text-text-secondary">{unit.toLowerCase()}</span>
             </div>
             <button
-              onClick={() => setAmount((p) => p + 0.5)}
+              onClick={() => setAmount((p) => p + (unit === "OZ" ? 0.5 : 10))}
               className="w-10 h-10 rounded-full bg-elevated text-text-primary flex items-center justify-center text-lg font-bold"
             >
               +
