@@ -11,6 +11,7 @@ export function usePwaInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIos, setIsIos] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
 
   useEffect(() => {
     const standalone =
@@ -23,6 +24,7 @@ export function usePwaInstall() {
 
     const ua = window.navigator.userAgent.toLowerCase();
     setIsIos(/iphone|ipad|ipod/.test(ua));
+    setIsAndroid(/android/.test(ua));
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -49,8 +51,6 @@ export function usePwaInstall() {
     }
     return false;
   };
-
-  const isAndroid = /android/.test(window.navigator.userAgent.toLowerCase());
 
   return {
     canInstall: !!deferredPrompt && !isInstalled,
