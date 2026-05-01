@@ -3,6 +3,13 @@ const nextConfig = {
   async headers() {
     return [
       {
+        source: "/:serviceWorker(sw.js|push-sw.js|workbox-:hash.js)",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/" },
+        ],
+      },
+      {
         source: "/(.*)?",
         headers: [
           { key: "X-Frame-Options", value: "DENY" },

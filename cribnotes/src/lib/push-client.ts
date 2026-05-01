@@ -17,14 +17,34 @@ async function waitForActiveRegistration(registration: ServiceWorkerRegistration
   if (registration.active) return registration;
 
   const installingWorker = registration.installing || registration.waiting;
-  if (!installingWorker) return navigator.serviceWorker.ready;
+  if (!installingWorker) {
+    return Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<never>((_, reject) => {
+        window.setTimeout(() => reject(new Error("Service worker setup timed out. Close and reopen the installed app, then try again.")), 30000);
+      }),
+    ]);
+  }
+
+  if (installingWorker.state === "activated") {
+    return registration;
+  }
+
+  if (installingWorker.state === "installed" && !registration.active) {
+    installingWorker.postMessage({ type: "SKIP_WAITING" });
+  }
 
   await new Promise<void>((resolve, reject) => {
     const timeout = window.setTimeout(() => {
-      reject(new Error("Service worker setup timed out. Refresh the app and try again."));
-    }, 10000);
+      reject(new Error("Service worker setup timed out. Close and reopen the installed app, then try again."));
+    }, 30000);
 
     installingWorker.addEventListener("statechange", () => {
+      if (installingWorker.state === "redundant") {
+        window.clearTimeout(timeout);
+        reject(new Error("Service worker setup was interrupted. Refresh the app and try again."));
+      }
+
       if (installingWorker.state === "activated") {
         window.clearTimeout(timeout);
         resolve();
@@ -36,8 +56,11 @@ async function waitForActiveRegistration(registration: ServiceWorkerRegistration
 }
 
 async function getReadyRegistration() {
-  const existing = await navigator.serviceWorker.getRegistration("/");
-  const registration = existing || await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+  const registration = await navigator.serviceWorker.register("/sw.js", {
+    scope: "/",
+    updateViaCache: "none",
+  });
+  registration.update().catch(() => undefined);
 
   return waitForActiveRegistration(registration);
 }
