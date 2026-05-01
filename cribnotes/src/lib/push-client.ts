@@ -13,6 +13,23 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
+type PushDiagnostic = {
+  supported: boolean;
+  notificationPermission: NotificationPermission | "unavailable";
+  hasController: boolean;
+  registrationScope: string | null;
+  activeState: string | null;
+  installingState: string | null;
+  waitingState: string | null;
+  standalone: boolean;
+  userAgent: string;
+};
+
+function isStandaloneDisplay() {
+  return window.matchMedia("(display-mode: standalone)").matches
+    || ("standalone" in window.navigator && Boolean((window.navigator as any).standalone));
+}
+
 async function waitForActiveRegistration(registration: ServiceWorkerRegistration) {
   if (registration.active) return registration;
 
@@ -62,7 +79,11 @@ async function getReadyRegistration() {
   });
   registration.update().catch(() => undefined);
 
-  return waitForActiveRegistration(registration);
+  try {
+    return await waitForActiveRegistration(registration);
+  } catch {
+    return registration;
+  }
 }
 
 export function isPushSupported() {
@@ -86,14 +107,51 @@ export async function subscribeToPush(publicKey: string) {
   const existing = await registration.pushManager.getSubscription();
   if (existing) return existing;
 
-  return registration.pushManager.subscribe({
-    userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(publicKey),
-  });
+  try {
+    return await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicKey),
+    });
+  } catch (error: any) {
+    const details = await getPushDiagnostics().catch(() => null);
+    const state = details
+      ? ` active=${details.activeState || "none"} waiting=${details.waitingState || "none"} installing=${details.installingState || "none"} standalone=${details.standalone}`
+      : "";
+    throw new Error(`${error?.message || "Could not subscribe this device to push notifications."}${state}`);
+  }
 }
 
 export async function getPushSubscription() {
   if (!isPushSupported()) return null;
   const registration = await getReadyRegistration();
   return registration.pushManager.getSubscription();
+}
+
+export async function getPushDiagnostics(): Promise<PushDiagnostic> {
+  if (!isPushSupported()) {
+    return {
+      supported: false,
+      notificationPermission: "Notification" in window ? Notification.permission : "unavailable",
+      hasController: Boolean(navigator.serviceWorker?.controller),
+      registrationScope: null,
+      activeState: null,
+      installingState: null,
+      waitingState: null,
+      standalone: isStandaloneDisplay(),
+      userAgent: window.navigator.userAgent,
+    };
+  }
+
+  const registration = await navigator.serviceWorker.getRegistration("/");
+  return {
+    supported: true,
+    notificationPermission: Notification.permission,
+    hasController: Boolean(navigator.serviceWorker.controller),
+    registrationScope: registration?.scope || null,
+    activeState: registration?.active?.state || null,
+    installingState: registration?.installing?.state || null,
+    waitingState: registration?.waiting?.state || null,
+    standalone: isStandaloneDisplay(),
+    userAgent: window.navigator.userAgent,
+  };
 }

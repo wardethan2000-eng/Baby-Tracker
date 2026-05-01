@@ -10,7 +10,7 @@ import { Modal } from "@/components/ui/modal";
 import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
 import { usePwaInstall } from "@/lib/usePwaInstall";
-import { isPushSupported, subscribeToPush } from "@/lib/push-client";
+import { getPushDiagnostics, isPushSupported, subscribeToPush } from "@/lib/push-client";
 import { formatChildAge, formatDate } from "@/lib/utils";
 
 type PersonRole = "PARENT" | "CARETAKER" | "BABYSITTER";
@@ -72,6 +72,7 @@ export default function SettingsPage() {
   const [exportRange, setExportRange] = useState("last30");
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("default");
   const [isSubscribing, setIsSubscribing] = useState(false);
+  const [notificationDebug, setNotificationDebug] = useState<string | null>(null);
   const [feedInterval, setFeedInterval] = useState(120);
 
   useEffect(() => {
@@ -177,6 +178,7 @@ export default function SettingsPage() {
     }
 
     setIsSubscribing(true);
+    setNotificationDebug(null);
     try {
       const subscription = await subscribeToPush(vapid.publicKey);
       await api("/api/notifications/subscribe", "POST", subscription.toJSON());
@@ -184,6 +186,18 @@ export default function SettingsPage() {
       queryClient.invalidateQueries({ queryKey: ["notifications", "preferences"] });
       toast.success("Notifications enabled on this device");
     } catch (error: any) {
+      const diagnostic = await getPushDiagnostics().catch(() => null);
+      if (diagnostic) {
+        setNotificationDebug([
+          `Supported: ${diagnostic.supported}`,
+          `Permission: ${diagnostic.notificationPermission}`,
+          `Installed mode: ${diagnostic.standalone}`,
+          `Controller: ${diagnostic.hasController}`,
+          `Active: ${diagnostic.activeState || "none"}`,
+          `Waiting: ${diagnostic.waitingState || "none"}`,
+          `Installing: ${diagnostic.installingState || "none"}`,
+        ].join(" | "));
+      }
       toast.error(error.message || "Could not enable notifications");
     } finally {
       setIsSubscribing(false);
@@ -374,6 +388,9 @@ export default function SettingsPage() {
 
           {!vapid?.configured && (
             <p className="text-xs text-warning">Server VAPID keys are missing. Add NEXT_PUBLIC_VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY before push can be enabled.</p>
+          )}
+          {notificationDebug && (
+            <p className="text-xs text-warning break-words">{notificationDebug}</p>
           )}
 
           {selectedChildId ? (
