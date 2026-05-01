@@ -13,6 +13,35 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
+async function waitForActiveRegistration(registration: ServiceWorkerRegistration) {
+  if (registration.active) return registration;
+
+  const installingWorker = registration.installing || registration.waiting;
+  if (!installingWorker) return navigator.serviceWorker.ready;
+
+  await new Promise<void>((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      reject(new Error("Service worker setup timed out. Refresh the app and try again."));
+    }, 10000);
+
+    installingWorker.addEventListener("statechange", () => {
+      if (installingWorker.state === "activated") {
+        window.clearTimeout(timeout);
+        resolve();
+      }
+    });
+  });
+
+  return registration;
+}
+
+async function getReadyRegistration() {
+  const existing = await navigator.serviceWorker.getRegistration("/");
+  const registration = existing || await navigator.serviceWorker.register("/sw.js", { scope: "/" });
+
+  return waitForActiveRegistration(registration);
+}
+
 export function isPushSupported() {
   return typeof window !== "undefined"
     && "serviceWorker" in navigator
@@ -30,7 +59,7 @@ export async function subscribeToPush(publicKey: string) {
     throw new Error("Notification permission was not granted.");
   }
 
-  const registration = await navigator.serviceWorker.ready;
+  const registration = await getReadyRegistration();
   const existing = await registration.pushManager.getSubscription();
   if (existing) return existing;
 
@@ -42,6 +71,6 @@ export async function subscribeToPush(publicKey: string) {
 
 export async function getPushSubscription() {
   if (!isPushSupported()) return null;
-  const registration = await navigator.serviceWorker.ready;
+  const registration = await getReadyRegistration();
   return registration.pushManager.getSubscription();
 }
