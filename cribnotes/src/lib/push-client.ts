@@ -73,17 +73,13 @@ async function waitForActiveRegistration(registration: ServiceWorkerRegistration
 }
 
 async function getReadyRegistration() {
-  const registration = await navigator.serviceWorker.register("/sw.js", {
+  await navigator.serviceWorker.register("/sw.js", {
     scope: "/",
     updateViaCache: "none",
   });
+  const registration = await navigator.serviceWorker.ready;
   registration.update().catch(() => undefined);
-
-  try {
-    return await waitForActiveRegistration(registration);
-  } catch {
-    return registration;
-  }
+  return waitForActiveRegistration(registration);
 }
 
 export function isPushSupported() {
@@ -103,11 +99,11 @@ export async function subscribeToPush(publicKey: string) {
     throw new Error("Notification permission was not granted.");
   }
 
-  const registration = await getReadyRegistration();
-  const existing = await registration.pushManager.getSubscription();
-  if (existing) return existing;
-
   try {
+    const registration = await getReadyRegistration();
+    const existing = await registration.pushManager.getSubscription();
+    if (existing) return existing;
+
     return await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(publicKey),
@@ -117,7 +113,7 @@ export async function subscribeToPush(publicKey: string) {
     const state = details
       ? ` active=${details.activeState || "none"} waiting=${details.waitingState || "none"} installing=${details.installingState || "none"} standalone=${details.standalone}`
       : "";
-    throw new Error(`${error?.message || "Could not subscribe this device to push notifications."}${state}`);
+    throw new Error(`${error?.name ? `${error.name}: ` : ""}${error?.message || "Could not subscribe this device to push notifications."}${state}`);
   }
 }
 

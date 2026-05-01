@@ -39,6 +39,9 @@ export async function GET(request: Request) {
     const [subscription] = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
       SELECT id FROM "PushSubscription" WHERE "userId" = ${session.user.id} LIMIT 1
     `);
+    const [subscriptionCount] = await prisma.$queryRaw<{ count: bigint }[]>(Prisma.sql`
+      SELECT COUNT(*)::bigint AS count FROM "PushSubscription" WHERE "userId" = ${session.user.id}
+    `);
 
     return NextResponse.json({
       childId,
@@ -46,6 +49,7 @@ export async function GET(request: Request) {
       feedReminderEnabled: preference?.feedReminderEnabled ?? false,
       feedReminderIntervalMinutes: preference?.feedReminderIntervalMinutes ?? 120,
       hasSubscription: Boolean(subscription),
+      subscriptionCount: Number(subscriptionCount?.count ?? 0),
     });
   } catch {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

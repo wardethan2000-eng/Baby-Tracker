@@ -196,6 +196,7 @@ export default function SettingsPage() {
           `Active: ${diagnostic.activeState || "none"}`,
           `Waiting: ${diagnostic.waitingState || "none"}`,
           `Installing: ${diagnostic.installingState || "none"}`,
+          `Saved subscriptions: ${notificationPreferences?.subscriptionCount ?? 0}`,
         ].join(" | "));
       }
       toast.error(error.message || "Could not enable notifications");
