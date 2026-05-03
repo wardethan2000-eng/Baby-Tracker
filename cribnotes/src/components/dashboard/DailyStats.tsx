@@ -75,9 +75,9 @@ export default function DailyStats() {
           <div className="flex items-center gap-3 bg-surface border border-border rounded-xl px-4 py-2.5">
             <Baby className="w-5 h-5 text-[#38bdf8]" strokeWidth={2} />
             <span className="text-sm font-medium text-text-primary">Fed</span>
-            <span className="ml-auto text-sm font-semibold text-text-primary">{todayFeeds.length}x</span>
+            <span className="ml-auto text-xs text-text-muted">{todayFeeds.length}x</span>
             {totalFeedVolume > 0 && (
-              <span className="text-xs text-text-muted">{totalFeedVolume.toFixed(1)} oz</span>
+              <span className="text-sm font-semibold text-text-primary">{totalFeedVolume.toFixed(1)} oz</span>
             )}
           </div>
         )}
@@ -85,9 +85,9 @@ export default function DailyStats() {
           <div className="flex items-center gap-3 bg-surface border border-border rounded-xl px-4 py-2.5">
             <Heart className="w-5 h-5 text-[#f472b6]" strokeWidth={2} />
             <span className="text-sm font-medium text-text-primary">Nursed</span>
-            <span className="ml-auto text-sm font-semibold text-text-primary">{todayNurses.length}x</span>
+            <span className="ml-auto text-xs text-text-muted">{todayNurses.length}x</span>
             {totalNurseMinutes > 0 && (
-              <span className="text-xs text-text-muted">{formatDuration(totalNurseMinutes)}</span>
+              <span className="text-sm font-semibold text-text-primary">{formatDuration(totalNurseMinutes)}</span>
             )}
           </div>
         )}
@@ -95,9 +95,9 @@ export default function DailyStats() {
           <div className="flex items-center gap-3 bg-surface border border-border rounded-xl px-4 py-2.5">
             <Milk className="w-5 h-5 text-[#a78bfa]" strokeWidth={2} />
             <span className="text-sm font-medium text-text-primary">Pumped</span>
-            <span className="ml-auto text-sm font-semibold text-text-primary">{todayPumps.length}x</span>
+            <span className="ml-auto text-xs text-text-muted">{todayPumps.length}x</span>
             {totalPumpVolume > 0 && (
-              <span className="text-xs text-text-muted">{totalPumpVolume.toFixed(1)} oz</span>
+              <span className="text-sm font-semibold text-text-primary">{totalPumpVolume.toFixed(1)} oz</span>
             )}
           </div>
         )}
