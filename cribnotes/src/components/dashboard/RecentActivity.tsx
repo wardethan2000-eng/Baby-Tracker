@@ -6,13 +6,13 @@ import { toast } from "sonner";
 import { useAppStore } from "@/lib/store";
 import { formatRelativeTime } from "@/lib/utils";
 
-const typeConfig: Record<string, { icon: typeof Moon; label: string; color: string; detailKey: string }> = {
-  WAKE: { icon: Sun, label: "Woke Up", color: "text-[#fbbf24] bg-[#fbbf24]/10", detailKey: "" },
-  SLEEP: { icon: Moon, label: "Fell Asleep", color: "text-[#818cf8] bg-[#818cf8]/10", detailKey: "" },
-  FEED: { icon: Baby, label: "Fed", color: "text-[#38bdf8] bg-[#38bdf8]/10", detailKey: "feedAmount" },
-  DIAPER: { icon: Droplets, label: "Diaper", color: "text-[#818cf8] bg-[#818cf8]/10", detailKey: "" },
-  NURSE: { icon: Heart, label: "Nursed", color: "text-[#f472b6] bg-[#f472b6]/10", detailKey: "" },
-  PUMP: { icon: Milk, label: "Pumped", color: "text-[#a78bfa] bg-[#a78bfa]/10", detailKey: "" },
+const typeConfig: Record<string, { icon: typeof Moon; label: string; color: string }> = {
+  WAKE: { icon: Sun, label: "Woke Up", color: "text-wake bg-wake/10" },
+  SLEEP: { icon: Moon, label: "Fell Asleep", color: "text-sleep bg-sleep/10" },
+  FEED: { icon: Baby, label: "Fed", color: "text-feed bg-feed/10" },
+  DIAPER: { icon: Droplets, label: "Diaper", color: "text-diaper bg-diaper/10" },
+  NURSE: { icon: Heart, label: "Nursed", color: "text-nurse bg-nurse/10" },
+  PUMP: { icon: Milk, label: "Pumped", color: "text-pump bg-pump/10" },
 };
 
 export default function RecentActivity() {

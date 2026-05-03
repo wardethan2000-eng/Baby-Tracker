@@ -15,19 +15,16 @@ interface QuickLogButtonProps {
 
 const colorMap = {
   primary: {
-    bg: "bg-[#38bdf8]/10",
-    text: "text-[#38bdf8]",
-    shadow: "shadow-[0_4px_24px_rgba(56,189,248,0.2)]",
+    bg: "bg-feed/10",
+    text: "text-feed",
   },
   secondary: {
-    bg: "bg-[#818cf8]/10",
-    text: "text-[#818cf8]",
-    shadow: "shadow-[0_4px_24px_rgba(129,140,248,0.2)]",
+    bg: "bg-diaper/10",
+    text: "text-diaper",
   },
   warning: {
-    bg: "bg-[#fbbf24]/10",
-    text: "text-[#fbbf24]",
-    shadow: "shadow-[0_4px_24px_rgba(251,191,36,0.2)]",
+    bg: "bg-wake/10",
+    text: "text-wake",
   },
 };
 
@@ -51,7 +48,6 @@ const QuickLogButton = forwardRef<HTMLButtonElement, QuickLogButtonProps>(
           "transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-primary",
           "bg-surface border border-border hover:bg-elevated",
           "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
-          c.shadow,
           c.text
         )}
         onClick={onClick}

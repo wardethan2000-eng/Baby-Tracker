@@ -25,11 +25,11 @@ const audiences = [
 ];
 
 const purposeStyles: Record<string, string> = {
-  GUIDE: "bg-[#38bdf8]/10 text-[#38bdf8]",
-  INSTRUCTION: "bg-[#fbbf24]/10 text-[#fbbf24]",
-  UPDATE: "bg-[#34d399]/10 text-[#34d399]",
-  QUESTION: "bg-[#f472b6]/10 text-[#f472b6]",
-  GENERAL: "bg-[#a78bfa]/10 text-[#a78bfa]",
+  GUIDE: "bg-feed/10 text-feed",
+  INSTRUCTION: "bg-wake/10 text-wake",
+  UPDATE: "bg-success/10 text-success",
+  QUESTION: "bg-nurse/10 text-nurse",
+  GENERAL: "bg-pump/10 text-pump",
 };
 
 const audienceLabels = Object.fromEntries(audiences.map((item) => [item.value, item.label]));
@@ -179,7 +179,7 @@ export default function NotesPage() {
               rows={5}
               maxLength={2000}
               required
-              className="w-full rounded-2xl border border-border bg-white px-4 py-3 text-[#0f172a] placeholder:text-[#64748b] caret-primary focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full rounded-2xl border border-border bg-elevated px-4 py-3 text-text-primary placeholder:text-text-muted caret-primary focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 

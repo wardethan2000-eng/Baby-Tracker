@@ -11,12 +11,12 @@ interface LogRowProps {
 }
 
 const typeConfig: Record<string, { icon: string; color: string; label: string }> = {
-  WAKE: { icon: "☀️", color: "text-[#fbbf24]", label: "Woke Up" },
-  SLEEP: { icon: "😴", color: "text-[#818cf8]", label: "Fell Asleep" },
-  FEED: { icon: "🍼", color: "text-[#38bdf8]", label: "Fed" },
-  DIAPER: { icon: "💧", color: "text-[#818cf8]", label: "Diaper" },
-  NURSE: { icon: "🤱", color: "text-[#f472b6]", label: "Nursed" },
-  PUMP: { icon: "🥛", color: "text-[#a78bfa]", label: "Pumped" },
+  WAKE: { icon: "☀️", color: "text-wake", label: "Woke Up" },
+  SLEEP: { icon: "😴", color: "text-sleep", label: "Fell Asleep" },
+  FEED: { icon: "🍼", color: "text-feed", label: "Fed" },
+  DIAPER: { icon: "💧", color: "text-diaper", label: "Diaper" },
+  NURSE: { icon: "🤱", color: "text-nurse", label: "Nursed" },
+  PUMP: { icon: "🥛", color: "text-pump", label: "Pumped" },
 };
 
 export function LogRow({ log, onEdit, onDelete }: LogRowProps) {

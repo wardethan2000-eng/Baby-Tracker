@@ -17,10 +17,12 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useAppStore } from "@/lib/store";
+import { useChartTheme } from "@/lib/useChartTheme";
 
 export default function AnalyticsPage() {
   const selectedChildId = useAppStore((s) => s.selectedChildId);
   const [timeRange, setTimeRange] = useState<"day" | "week" | "month">("week");
+  const chart = useChartTheme();
 
   const getDateRange = () => {
     const now = new Date();
@@ -36,7 +38,7 @@ export default function AnalyticsPage() {
 
   const { from, to } = getDateRange();
 
-  const { data: logsData, isLoading } = useQuery({
+  const { data: logsData } = useQuery({
     queryKey: ["logs", selectedChildId, "analytics", timeRange],
     queryFn: () => {
       const params = new URLSearchParams({
@@ -139,6 +141,8 @@ export default function AnalyticsPage() {
     return { date: key, minutes: daySleepMin };
   });
 
+  const tooltipStyle = { backgroundColor: chart.tooltipBg, border: `1px solid ${chart.tooltipBorder}`, borderRadius: "0.75rem" };
+
   return (
     <div className="px-4 pt-4 pb-24">
       <h1 className="font-display text-2xl font-bold text-text-primary mb-4">Analytics</h1>
@@ -174,11 +178,11 @@ export default function AnalyticsPage() {
           {feedAmountData.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={feedAmountData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
-                <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                <Tooltip contentStyle={{ backgroundColor: "#161f33", border: "1px solid #1e3a5f", borderRadius: "0.75rem" }} />
-                <Line type="monotone" dataKey="amount" stroke="#38bdf8" strokeWidth={2} dot={{ stroke: "#38bdf8", r: 4 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.gridStroke} />
+                <XAxis dataKey="date" stroke={chart.axisStroke} tick={{ fontSize: 12 }} />
+                <YAxis stroke={chart.axisStroke} tick={{ fontSize: 12 }} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Line type="monotone" dataKey="amount" stroke={chart.feed} strokeWidth={2} dot={{ stroke: chart.feed, r: 4 }} />
               </LineChart>
             </ResponsiveContainer>
           ) : (
@@ -190,11 +194,11 @@ export default function AnalyticsPage() {
           {feedsPerDay.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={feedsPerDay}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
-                <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                <Tooltip contentStyle={{ backgroundColor: "#161f33", border: "1px solid #1e3a5f", borderRadius: "0.75rem" }} />
-                <Bar dataKey="count" fill="#38bdf8" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.gridStroke} />
+                <XAxis dataKey="date" stroke={chart.axisStroke} tick={{ fontSize: 12 }} />
+                <YAxis stroke={chart.axisStroke} tick={{ fontSize: 12 }} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Bar dataKey="count" fill={chart.feed} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -206,11 +210,11 @@ export default function AnalyticsPage() {
           {wakesByHour.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={wakesByHour}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
-                <XAxis dataKey="hour" stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                <Tooltip contentStyle={{ backgroundColor: "#161f33", border: "1px solid #1e3a5f", borderRadius: "0.75rem" }} />
-                <Bar dataKey="count" fill="#fbbf24" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.gridStroke} />
+                <XAxis dataKey="hour" stroke={chart.axisStroke} tick={{ fontSize: 12 }} />
+                <YAxis stroke={chart.axisStroke} tick={{ fontSize: 12 }} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Bar dataKey="count" fill={chart.wake} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -222,11 +226,11 @@ export default function AnalyticsPage() {
           {diapersPerDay.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={diapersPerDay}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
-                <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                <Tooltip contentStyle={{ backgroundColor: "#161f33", border: "1px solid #1e3a5f", borderRadius: "0.75rem" }} />
-                <Bar dataKey="count" fill="#818cf8" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.gridStroke} />
+                <XAxis dataKey="date" stroke={chart.axisStroke} tick={{ fontSize: 12 }} />
+                <YAxis stroke={chart.axisStroke} tick={{ fontSize: 12 }} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Bar dataKey="count" fill={chart.diaper} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -238,11 +242,11 @@ export default function AnalyticsPage() {
           {sleepDurationPerDay.some((d) => d.minutes > 0) ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={sleepDurationPerDay}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
-                <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                <Tooltip contentStyle={{ backgroundColor: "#161f33", border: "1px solid #1e3a5f", borderRadius: "0.75rem" }} />
-                <Bar dataKey="minutes" fill="#818cf8" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.gridStroke} />
+                <XAxis dataKey="date" stroke={chart.axisStroke} tick={{ fontSize: 12 }} />
+                <YAxis stroke={chart.axisStroke} tick={{ fontSize: 12 }} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Bar dataKey="minutes" fill={chart.sleep} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -254,11 +258,11 @@ export default function AnalyticsPage() {
           {nurseDurationPerDay.some((d) => d.minutes > 0) ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={nurseDurationPerDay}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
-                <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                <Tooltip contentStyle={{ backgroundColor: "#161f33", border: "1px solid #1e3a5f", borderRadius: "0.75rem" }} />
-                <Bar dataKey="minutes" fill="#f472b6" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.gridStroke} />
+                <XAxis dataKey="date" stroke={chart.axisStroke} tick={{ fontSize: 12 }} />
+                <YAxis stroke={chart.axisStroke} tick={{ fontSize: 12 }} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Bar dataKey="minutes" fill={chart.nurse} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
@@ -270,11 +274,11 @@ export default function AnalyticsPage() {
           {pumpVolumePerDay.some((d) => d.amount > 0) ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={pumpVolumePerDay}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e3a5f" />
-                <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                <YAxis stroke="#94a3b8" tick={{ fontSize: 12 }} />
-                <Tooltip contentStyle={{ backgroundColor: "#161f33", border: "1px solid #1e3a5f", borderRadius: "0.75rem" }} />
-                <Bar dataKey="amount" fill="#a78bfa" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke={chart.gridStroke} />
+                <XAxis dataKey="date" stroke={chart.axisStroke} tick={{ fontSize: 12 }} />
+                <YAxis stroke={chart.axisStroke} tick={{ fontSize: 12 }} />
+                <Tooltip contentStyle={tooltipStyle} />
+                <Bar dataKey="amount" fill={chart.pump} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (

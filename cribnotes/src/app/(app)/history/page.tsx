@@ -102,12 +102,12 @@ export default function HistoryPage() {
   };
 
   const typeColors: Record<string, string> = {
-    WAKE: "bg-[#fbbf24]/10 text-[#fbbf24]",
-    SLEEP: "bg-[#818cf8]/10 text-[#818cf8]",
-    FEED: "bg-[#38bdf8]/10 text-[#38bdf8]",
-    DIAPER: "bg-[#818cf8]/10 text-[#818cf8]",
-    NURSE: "bg-[#f472b6]/10 text-[#f472b6]",
-    PUMP: "bg-[#a78bfa]/10 text-[#a78bfa]",
+    WAKE: "bg-wake/10 text-wake",
+    SLEEP: "bg-sleep/10 text-sleep",
+    FEED: "bg-feed/10 text-feed",
+    DIAPER: "bg-diaper/10 text-diaper",
+    NURSE: "bg-nurse/10 text-nurse",
+    PUMP: "bg-pump/10 text-pump",
   };
 
   return (

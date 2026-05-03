@@ -5,18 +5,48 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
 :root {
-  --bg-base: #0b1120;
-  --bg-surface: #161f33;
-  --bg-elevated: #1e2d47;
-  --accent-primary: #38bdf8;
-  --accent-secondary: #818cf8;
-  --accent-success: #34d399;
-  --accent-warning: #fbbf24;
+  --color-base: 248 250 252;
+  --color-surface: 255 255 255;
+  --color-elevated: 241 245 249;
+  --color-primary: 2 132 199;
+  --color-secondary: 79 70 229;
+  --color-success: 5 150 105;
+  --color-warning: 217 119 6;
+  --color-danger: 220 38 38;
+  --color-text-primary: 15 23 42;
+  --color-text-secondary: 71 85 105;
+  --color-text-muted: 148 163 184;
+  --color-border: 226 232 240;
+  --color-feed: 2 132 199;
+  --color-nurse: 219 39 119;
+  --color-pump: 124 58 237;
+  --color-diaper: 79 70 229;
+  --color-sleep: 217 119 6;
+  --color-wake: 217 119 6;
+}
+
+.dark {
+  --color-base: 11 17 32;
+  --color-surface: 22 31 51;
+  --color-elevated: 30 45 71;
+  --color-primary: 56 189 248;
+  --color-secondary: 129 140 248;
+  --color-success: 52 211 153;
+  --color-warning: 251 191 36;
+  --color-danger: 239 68 68;
+  --color-text-primary: 240 246 255;
+  --color-text-secondary: 148 163 184;
+  --color-text-muted: 71 85 105;
+  --color-border: 30 58 95;
+  --color-feed: 56 189 248;
+  --color-nurse: 244 114 182;
+  --color-pump: 167 139 250;
+  --color-diaper: 129 140 248;
+  --color-sleep: 251 191 36;
+  --color-wake: 251 191 36;
 }
 
 body {
-  color: #f0f6ff;
-  background: #0b1120;
   font-family: 'IBM Plex Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -46,6 +76,6 @@ input, textarea, select {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e3a5f;
+  background: rgb(var(--color-border));
   border-radius: 9999px;
 }

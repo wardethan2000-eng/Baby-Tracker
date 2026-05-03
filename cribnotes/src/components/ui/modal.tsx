@@ -38,7 +38,7 @@ const Modal: React.FC<ModalProps> = ({ open, onClose, title, children }) => {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-center mb-4">
-          <div className="w-12 h-1.5 bg-gray-400 rounded-full"></div>
+          <div className="w-12 h-1.5 bg-border rounded-full"></div>
         </div>
         {title && (
           <h3 className="text-lg font-semibold text-text-primary mb-4 text-center">
