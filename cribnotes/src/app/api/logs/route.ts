@@ -93,6 +93,7 @@ export async function POST(request: Request) {
         where: {
           childId: data.childId,
           type: data.type as any,
+          startedAt: { not: null },
           endedAt: null,
           deletedAt: null,
         },

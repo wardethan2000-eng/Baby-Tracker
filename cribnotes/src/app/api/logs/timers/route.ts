@@ -25,6 +25,7 @@ export async function GET(request: Request) {
       where: {
         childId,
         type: { in: ["SLEEP", "NURSE", "PUMP"] },
+        startedAt: { not: null },
         endedAt: null,
         deletedAt: null,
       },

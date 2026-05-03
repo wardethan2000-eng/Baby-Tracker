@@ -28,7 +28,9 @@ export function useActiveTimers() {
   useEffect(() => {
     if (!data?.timers) return;
 
-    const serverTimers: ActiveTimer[] = data.timers.map((t: any) => ({
+    const serverTimers: ActiveTimer[] = data.timers
+      .filter((t: any) => t.startedAt)
+      .map((t: any) => ({
       logId: t.id,
       type: t.type,
       startedAt: t.startedAt,
