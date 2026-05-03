@@ -106,7 +106,6 @@ export default function DailyStats() {
             <Droplets className="w-5 h-5 text-[#818cf8]" strokeWidth={2} />
             <span className="text-sm font-medium text-text-primary">Diaper</span>
             <span className="ml-auto text-sm font-semibold text-text-primary">{diapers.length}x</span>
-            <span className="text-xs text-text-muted">{diapers.length} change{diapers.length !== 1 ? "s" : ""}</span>
           </div>
         )}
         {totalSleepMinutes > 0 && (
