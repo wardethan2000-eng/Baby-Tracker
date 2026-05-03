@@ -20,7 +20,7 @@ export default function QuickLogGrid() {
   const queryClient = useQueryClient();
   const selectedChildId = useAppStore((s) => s.selectedChildId);
   const addTimer = useAppStore((s) => s.addTimer);
-  const { hasTimer, getTimer, invalidateTimers } = useActiveTimers();
+  const { getTimer, invalidateTimers } = useActiveTimers();
 
   const [feedSheetOpen, setFeedSheetOpen] = useState(false);
   const [feedLogId, setFeedLogId] = useState<string | null>(null);

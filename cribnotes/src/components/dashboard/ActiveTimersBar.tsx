@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { Moon, Heart, Milk, Square } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useActiveTimers } from "@/lib/useActiveTimers";
 import { ActiveTimer } from "@/lib/store";
@@ -110,7 +110,6 @@ function TimerRow({ timer, onStop }: { timer: ActiveTimer; onStop: (timer: Activ
 
 export default function ActiveTimersBar() {
   const { timersForChild, removeTimer, invalidateTimers } = useActiveTimers();
-  const queryClient = useQueryClient();
 
   const stopMutation = useMutation({
     mutationFn: async (timer: ActiveTimer) => {
