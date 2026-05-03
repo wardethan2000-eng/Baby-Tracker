@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { MetricCard } from "@/components/analytics/MetricCard";
 import { ChartCard } from "@/components/analytics/ChartCard";
@@ -28,7 +28,7 @@ export default function AnalyticsPage() {
       case "day":
         return { from: startOfDay(now), to: endOfDay(now) };
       case "week":
-        return { from: startOfWeek(now), to: endOfWeek(now) };
+        return { from: startOfDay(subDays(now, 6)), to: endOfDay(now) };
       case "month":
         return { from: startOfMonth(now), to: endOfMonth(now) };
     }

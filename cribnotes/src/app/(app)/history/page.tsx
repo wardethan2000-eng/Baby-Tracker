@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
+import { format, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { LogRow } from "@/components/history/LogRow";
@@ -21,7 +21,7 @@ export default function HistoryPage() {
     const now = new Date();
     switch (dateRange) {
       case "today": return { from: startOfDay(now), to: endOfDay(now) };
-      case "week": return { from: startOfWeek(now), to: endOfWeek(now) };
+      case "week": return { from: startOfDay(subDays(now, 6)), to: endOfDay(now) };
       case "month": return { from: startOfMonth(now), to: endOfMonth(now) };
     }
   };
