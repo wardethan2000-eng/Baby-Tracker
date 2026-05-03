@@ -14,12 +14,6 @@ interface PumpDetailsSheetProps {
 
 type PumpSide = "LEFT" | "RIGHT" | "BOTH";
 
-const sides: { value: PumpSide; label: string }[] = [
-  { value: "LEFT", label: "Left" },
-  { value: "RIGHT", label: "Right" },
-  { value: "BOTH", label: "Both" },
-];
-
 function useLastPumpUnit() {
   const [unit, setUnit] = useState<"OZ" | "ML">("OZ");
 
