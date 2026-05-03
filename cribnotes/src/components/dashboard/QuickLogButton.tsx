@@ -30,10 +30,11 @@ const colorMap = {
 
 const QuickLogButton = forwardRef<HTMLButtonElement, QuickLogButtonProps>(
   ({ icon: Icon, label, color, onClick, haptic = true, disabled = false }, ref) => {
-    const handlePointerDown = () => {
+    const handleClick = () => {
       if (haptic && typeof navigator !== "undefined" && "vibrate" in navigator) {
         navigator.vibrate(50);
       }
+      onClick();
     };
 
     const c = colorMap[color];
@@ -50,8 +51,7 @@ const QuickLogButton = forwardRef<HTMLButtonElement, QuickLogButtonProps>(
           "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
           c.text
         )}
-        onClick={onClick}
-        onPointerDown={handlePointerDown}
+        onClick={handleClick}
       >
         <Icon className="w-10 h-10" />
         <span className="text-sm font-medium">{label}</span>
