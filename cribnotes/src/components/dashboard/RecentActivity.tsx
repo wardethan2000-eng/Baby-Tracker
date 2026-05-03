@@ -54,6 +54,14 @@ export default function RecentActivity() {
   const childName = children.find((c: any) => c.id === selectedChildId)?.name || "Baby";
 
   const getDetail = (log: any) => {
+    if (log.startedAt && !log.endedAt) {
+      const typeLabels: Record<string, string> = {
+        SLEEP: "Sleeping",
+        NURSE: "Nursing",
+        PUMP: "Pumping",
+      };
+      return typeLabels[log.type] ? `${typeLabels[log.type]}...` : "In progress";
+    }
     if (log.type === "FEED") {
       const parts: string[] = [];
       if (log.foodName) parts.push(log.foodName);
@@ -111,6 +119,11 @@ export default function RecentActivity() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-text-primary">{cfg.label}</span>
+                    {log.startedAt && !log.endedAt && (
+                      <span className="text-[10px] font-bold bg-current/20 px-1.5 py-0.5 rounded-full animate-pulse" style={{color: cfg.color.includes("text-") ? "" : undefined}}>
+                        LIVE
+                      </span>
+                    )}
                     <span className="text-xs text-text-muted">
                       {formatRelativeTime(new Date(log.occurredAt))}
                     </span>

@@ -23,7 +23,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     const body = await request.json();
     const data = updateLogSchema.parse(body);
 
-    const updateData = {
+    const updateData: any = {
       ...(data.occurredAt && { occurredAt: new Date(data.occurredAt) }),
       ...(data.notes !== undefined && { notes: data.notes }),
       ...(data.feedAmount !== undefined && { feedAmount: data.feedAmount }),
@@ -37,9 +37,32 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       ...(data.foodName !== undefined && { foodName: data.foodName }),
     };
 
+    let wakeLog = null;
+
+    if (data.stopTimer && log.endedAt === null && log.startedAt) {
+      const now = new Date();
+      updateData.endedAt = now;
+
+      if (log.type === "NURSE") {
+        const durationMinutes = Math.max(1, Math.round((now.getTime() - log.startedAt.getTime()) / 60000));
+        updateData.nurseDuration = durationMinutes;
+      }
+
+      if (log.type === "SLEEP") {
+        wakeLog = await prisma.log.create({
+          data: {
+            childId: log.childId,
+            userId,
+            type: "WAKE",
+            occurredAt: now,
+          },
+        });
+      }
+    }
+
     const updated = Object.keys(updateData).length
       ? await prisma.log.update({
-      where: { id: params.id },
+          where: { id: params.id },
           data: updateData,
         })
       : log;
@@ -50,7 +73,12 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       `;
     }
 
-    return NextResponse.json({ ...updated, diaperType: data.diaperType ?? null });
+    const response: any = { ...updated, diaperType: data.diaperType ?? log.diaperType ?? null };
+    if (wakeLog) {
+      response.wakeLog = wakeLog;
+    }
+
+    return NextResponse.json(response);
   } catch (error: any) {
     if (error.name === "ZodError") {
       return NextResponse.json({ error: error.errors }, { status: 400 });

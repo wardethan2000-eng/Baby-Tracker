@@ -85,12 +85,57 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const TIMER_TYPES: string[] = ["SLEEP", "NURSE", "PUMP"];
+    const isTimerStart = TIMER_TYPES.includes(data.type) && data.startedAt;
+
+    if (isTimerStart) {
+      const existingTimer = await prisma.log.findFirst({
+        where: {
+          childId: data.childId,
+          type: data.type as any,
+          endedAt: null,
+          deletedAt: null,
+        },
+      });
+
+      if (existingTimer) {
+        const now = new Date();
+        const endedAt = now;
+        const durationMinutes = existingTimer.startedAt
+          ? Math.round((now.getTime() - existingTimer.startedAt.getTime()) / 60000)
+          : 0;
+
+        const updateData: any = { endedAt };
+        if (existingTimer.type === "NURSE") {
+          updateData.nurseDuration = durationMinutes;
+        }
+
+        await prisma.log.update({
+          where: { id: existingTimer.id },
+          data: updateData,
+        });
+
+        if (existingTimer.type === "SLEEP") {
+          await prisma.log.create({
+            data: {
+              childId: data.childId,
+              userId,
+              type: "WAKE",
+              occurredAt: now,
+            },
+          });
+        }
+      }
+    }
+
+    const startedAtValue = data.startedAt ? new Date(data.startedAt) : null;
+
     const log = await prisma.log.create({
       data: {
         childId: data.childId,
         userId,
         type: data.type,
-        occurredAt: data.occurredAt ? new Date(data.occurredAt) : new Date(),
+        occurredAt: data.occurredAt ? new Date(data.occurredAt) : startedAtValue ?? new Date(),
         notes: data.notes,
         feedAmount: data.feedAmount,
         feedUnit: data.feedUnit,
@@ -99,8 +144,10 @@ export async function POST(request: Request) {
         nurseSide: data.nurseSide,
         pumpAmount: data.pumpAmount,
         pumpUnit: data.pumpUnit,
-        pumpSide: data.pumpSide,
+        pumpSide: data.pumpSide as any,
         foodName: data.foodName,
+        startedAt: startedAtValue,
+        endedAt: isTimerStart ? null : undefined,
       },
     });
 

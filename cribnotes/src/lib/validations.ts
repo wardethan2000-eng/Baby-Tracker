@@ -45,6 +45,7 @@ export const createLogSchema = z.object({
   pumpAmount: z.number().min(0).optional(),
   pumpUnit: z.enum(["OZ", "ML"]).optional(),
   pumpSide: z.enum(["LEFT", "RIGHT", "BOTH"]).optional(),
+  startedAt: z.string().optional(),
 });
 
 export const updateLogSchema = z.object({
@@ -60,6 +61,7 @@ export const updateLogSchema = z.object({
   pumpAmount: z.number().min(0).optional(),
   pumpUnit: z.enum(["OZ", "ML"]).optional(),
   pumpSide: z.enum(["LEFT", "RIGHT", "BOTH"]).optional(),
+  stopTimer: z.boolean().optional(),
 });
 
 export const createNoteSchema = z.object({

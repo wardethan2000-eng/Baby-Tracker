@@ -26,7 +26,7 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
   const [nurseSide, setNurseSide] = useState<"LEFT" | "RIGHT" | "BOTH">("BOTH");
   const [pumpAmount, setPumpAmount] = useState<string>("");
   const [pumpUnit, setPumpUnit] = useState<"OZ" | "ML">("OZ");
-  const [pumpSide, setPumpSide] = useState<"LEFT" | "RIGHT" | "BOTH" | "">("");
+  const [pumpSide, setPumpSide] = useState<"LEFT" | "RIGHT" | "BOTH">("BOTH");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -44,7 +44,7 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
       setNurseSide(log.nurseSide || "BOTH");
       setPumpAmount(log.pumpAmount != null ? String(log.pumpAmount) : "");
       setPumpUnit(log.pumpUnit || "OZ");
-      setPumpSide(log.pumpSide || "");
+      setPumpSide(log.pumpSide || "BOTH");
       setNotes(log.notes || "");
     }
   }, [log, open]);
@@ -77,7 +77,7 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
       if (log.type === "PUMP") {
         data.pumpAmount = pumpAmount ? parseFloat(pumpAmount) : undefined;
         data.pumpUnit = pumpUnit;
-        if (pumpSide) data.pumpSide = pumpSide;
+        data.pumpSide = pumpSide;
       }
       const res = await fetch(`/api/logs/${log.id}`, {
         method: "PATCH",
@@ -169,10 +169,10 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
               </div>
             </div>
             <div>
-              <p className="text-sm text-text-secondary mb-2">Side <span className="text-text-muted">(optional)</span></p>
+              <p className="text-sm text-text-secondary mb-2">Side</p>
               <div className="grid grid-cols-3 gap-2">
                 {(["LEFT", "RIGHT", "BOTH"] as const).map((s) => (
-                  <button key={s} type="button" onClick={() => setPumpSide(pumpSide === s ? "" : s)} className={`px-3 py-2 rounded-2xl text-sm ${pumpSide === s ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}>
+                  <button key={s} type="button" onClick={() => setPumpSide(s)} className={`px-3 py-2 rounded-2xl text-sm ${pumpSide === s ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}>
                     {s === "LEFT" ? "Left" : s === "RIGHT" ? "Right" : "Both"}
                   </button>
                 ))}

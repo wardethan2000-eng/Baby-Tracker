@@ -10,6 +10,7 @@ interface NurseDetailsSheetProps {
   open: boolean;
   onClose: () => void;
   logId: string | null;
+  isTimer?: boolean;
 }
 
 type NurseSide = "LEFT" | "RIGHT" | "BOTH";
@@ -20,7 +21,7 @@ const sides: { value: NurseSide; label: string }[] = [
   { value: "BOTH", label: "Both" },
 ];
 
-export default function NurseDetailsSheet({ open, onClose, logId }: NurseDetailsSheetProps) {
+export default function NurseDetailsSheet({ open, onClose, logId, isTimer = false }: NurseDetailsSheetProps) {
   const queryClient = useQueryClient();
   const [duration, setDuration] = useState(0);
   const [side, setSide] = useState<NurseSide>("BOTH");
@@ -55,48 +56,58 @@ export default function NurseDetailsSheet({ open, onClose, logId }: NurseDetails
 
   const handleSave = () => {
     if (!logId) return;
-    mutation.mutate({
-      nurseDuration: duration,
+    const data: any = {
+      nurseDuration: isTimer ? undefined : duration,
       nurseSide: side,
       notes: notes || undefined,
-    });
+    };
+    if (isTimer) delete data.nurseDuration;
+    mutation.mutate(data);
   };
 
   return (
-    <Modal open={open} onClose={handleClose} title="Add nursing details">
+    <Modal open={open} onClose={handleClose} title={isTimer ? "Nursing timer running" : "Add nursing details"}>
       <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-text-secondary mb-2">Duration (minutes)</label>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setDuration((p) => Math.max(0, p - 1))}
-              className="w-10 h-10 rounded-full bg-elevated text-text-primary flex items-center justify-center text-lg font-bold"
-            >
-              −
-            </button>
-            <div className="flex-1 text-center">
-              <span className="text-2xl font-bold text-text-primary">{duration}</span>
-              <span className="ml-1 text-text-secondary">min</span>
-            </div>
-            <button
-              onClick={() => setDuration((p) => p + 1)}
-              className="w-10 h-10 rounded-full bg-elevated text-text-primary flex items-center justify-center text-lg font-bold"
-            >
-              +
-            </button>
-          </div>
-          <div className="flex gap-2 mt-2 flex-wrap">
-            {[5, 10, 15, 20, 30].map((m) => (
+        {!isTimer && (
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-2">Duration (minutes)</label>
+            <div className="flex items-center gap-3">
               <button
-                key={m}
-                onClick={() => setDuration(m)}
-                className={`px-3 py-1.5 rounded-full text-sm ${duration === m ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}
+                onClick={() => setDuration((p) => Math.max(0, p - 1))}
+                className="w-10 h-10 rounded-full bg-elevated text-text-primary flex items-center justify-center text-lg font-bold"
               >
-                {m}m
+                −
               </button>
-            ))}
+              <div className="flex-1 text-center">
+                <span className="text-2xl font-bold text-text-primary">{duration}</span>
+                <span className="ml-1 text-text-secondary">min</span>
+              </div>
+              <button
+                onClick={() => setDuration((p) => p + 1)}
+                className="w-10 h-10 rounded-full bg-elevated text-text-primary flex items-center justify-center text-lg font-bold"
+              >
+                +
+              </button>
+            </div>
+            <div className="flex gap-2 mt-2 flex-wrap">
+              {[5, 10, 15, 20, 30].map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setDuration(m)}
+                  className={`px-3 py-1.5 rounded-full text-sm ${duration === m ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}
+                >
+                  {m}m
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {isTimer && (
+          <p className="text-sm text-text-secondary">
+            Select the side and add optional notes. The timer is still running — stop it from the dashboard when done.
+          </p>
+        )}
 
         <div>
           <p className="text-sm font-medium text-text-secondary mb-2">Side</p>

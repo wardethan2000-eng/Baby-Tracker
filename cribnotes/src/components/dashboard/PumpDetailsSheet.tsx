@@ -10,9 +10,16 @@ interface PumpDetailsSheetProps {
   open: boolean;
   onClose: () => void;
   logId: string | null;
+  isTimer?: boolean;
 }
 
 type PumpSide = "LEFT" | "RIGHT" | "BOTH";
+
+const sides: { value: PumpSide; label: string }[] = [
+  { value: "LEFT", label: "Left" },
+  { value: "RIGHT", label: "Right" },
+  { value: "BOTH", label: "Both" },
+];
 
 function useLastPumpUnit() {
   const [unit, setUnit] = useState<"OZ" | "ML">("OZ");
@@ -22,6 +29,8 @@ function useLastPumpUnit() {
       const saved = localStorage.getItem("nw-lastPumpUnit");
       if (saved === "OZ" || saved === "ML") setUnit(saved);
     } catch {}
+
+    return undefined;
   }, []);
 
   const saveUnit = (u: "OZ" | "ML") => {
@@ -32,11 +41,11 @@ function useLastPumpUnit() {
   return { unit, saveUnit };
 }
 
-export default function PumpDetailsSheet({ open, onClose, logId }: PumpDetailsSheetProps) {
+export default function PumpDetailsSheet({ open, onClose, logId, isTimer = false }: PumpDetailsSheetProps) {
   const queryClient = useQueryClient();
   const { unit, saveUnit } = useLastPumpUnit();
   const [amount, setAmount] = useState(0);
-  const [side, setSide] = useState<PumpSide | "">("");
+  const [side, setSide] = useState<PumpSide>("BOTH");
   const [notes, setNotes] = useState("");
 
   const mutation = useMutation({
@@ -61,7 +70,7 @@ export default function PumpDetailsSheet({ open, onClose, logId }: PumpDetailsSh
 
   const handleClose = () => {
     setAmount(0);
-    setSide("");
+    setSide("BOTH");
     setNotes("");
     onClose();
   };
@@ -69,18 +78,41 @@ export default function PumpDetailsSheet({ open, onClose, logId }: PumpDetailsSh
   const handleSave = () => {
     if (!logId) return;
     mutation.mutate({
-      pumpAmount: amount,
-      pumpUnit: unit,
-      ...(side ? { pumpSide: side } : {}),
+      pumpAmount: amount > 0 ? amount : undefined,
+      pumpUnit: amount > 0 ? unit : undefined,
+      pumpSide: side,
       notes: notes || undefined,
     });
   };
 
   return (
-    <Modal open={open} onClose={handleClose} title="Add pumping details (optional)">
+    <Modal open={open} onClose={handleClose} title={isTimer ? "Pumping timer running" : "Add pumping details (optional)"}>
       <div className="space-y-4">
+        {isTimer && (
+          <p className="text-sm text-text-secondary">
+            Select the side and add details. The timer is still running — stop it from the dashboard when done.
+          </p>
+        )}
+
         <div>
-          <label className="block text-sm font-medium text-text-secondary mb-2">Amount</label>
+          <p className="text-sm font-medium text-text-secondary mb-2">Side</p>
+          <div className="grid grid-cols-3 gap-2">
+            {sides.map((s) => (
+              <button
+                key={s.value}
+                onClick={() => setSide(s.value)}
+                className={`px-3 py-3 rounded-2xl text-sm font-medium ${
+                  side === s.value ? "bg-primary text-base" : "bg-elevated text-text-secondary"
+                }`}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-text-secondary mb-2">Amount {isTimer && "(optional — add later)"}</label>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setAmount((p) => Math.max(0, p - (unit === "OZ" ? 0.5 : 10)))}
@@ -111,30 +143,6 @@ export default function PumpDetailsSheet({ open, onClose, logId }: PumpDetailsSh
               className={`px-4 py-1.5 rounded-full text-sm ${unit === "ML" ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}
             >
               ML
-            </button>
-          </div>
-        </div>
-
-        <div>
-          <p className="text-sm font-medium text-text-secondary mb-2">Side <span className="text-text-muted">(optional)</span></p>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              onClick={() => setSide(side === "LEFT" ? "" : "LEFT")}
-              className={`px-3 py-3 rounded-2xl text-sm font-medium ${side === "LEFT" ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}
-            >
-              Left
-            </button>
-            <button
-              onClick={() => setSide(side === "RIGHT" ? "" : "RIGHT")}
-              className={`px-3 py-3 rounded-2xl text-sm font-medium ${side === "RIGHT" ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}
-            >
-              Right
-            </button>
-            <button
-              onClick={() => setSide(side === "BOTH" ? "" : "BOTH")}
-              className={`px-3 py-3 rounded-2xl text-sm font-medium ${side === "BOTH" ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}
-            >
-              Both
             </button>
           </div>
         </div>
