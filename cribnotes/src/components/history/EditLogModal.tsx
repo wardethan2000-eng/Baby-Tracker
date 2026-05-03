@@ -19,12 +19,14 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
   const [occurredAt, setOccurredAt] = useState("");
   const [feedAmount, setFeedAmount] = useState<string>("");
   const [feedUnit, setFeedUnit] = useState<"OZ" | "ML">("OZ");
-  const [feedType, setFeedType] = useState<"BREAST" | "BOTTLE" | "BOTH">("BOTTLE");
+  const [feedType, setFeedType] = useState<"BREAST" | "BOTTLE" | "BOTH" | "SOLID">("BOTTLE");
+  const [foodName, setFoodName] = useState("");
   const [diaperType, setDiaperType] = useState<"PEE" | "POOP" | "BOTH">("PEE");
   const [nurseDuration, setNurseDuration] = useState<string>("");
   const [nurseSide, setNurseSide] = useState<"LEFT" | "RIGHT" | "BOTH">("BOTH");
   const [pumpAmount, setPumpAmount] = useState<string>("");
   const [pumpUnit, setPumpUnit] = useState<"OZ" | "ML">("OZ");
+  const [pumpSide, setPumpSide] = useState<"LEFT" | "RIGHT" | "BOTH" | "">("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -36,11 +38,13 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
       setFeedAmount(log.feedAmount != null ? String(log.feedAmount) : "");
       setFeedUnit(log.feedUnit || "OZ");
       setFeedType(log.feedType || "BOTTLE");
+      setFoodName(log.foodName || "");
       setDiaperType(log.diaperType || "PEE");
       setNurseDuration(log.nurseDuration != null ? String(log.nurseDuration) : "");
       setNurseSide(log.nurseSide || "BOTH");
       setPumpAmount(log.pumpAmount != null ? String(log.pumpAmount) : "");
       setPumpUnit(log.pumpUnit || "OZ");
+      setPumpSide(log.pumpSide || "");
       setNotes(log.notes || "");
     }
   }, [log, open]);
@@ -61,6 +65,7 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
         data.feedAmount = feedAmount ? parseFloat(feedAmount) : undefined;
         data.feedUnit = feedUnit;
         data.feedType = feedType;
+        if (foodName.trim()) data.foodName = foodName.trim();
       }
       if (log.type === "DIAPER") {
         data.diaperType = diaperType;
@@ -72,6 +77,7 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
       if (log.type === "PUMP") {
         data.pumpAmount = pumpAmount ? parseFloat(pumpAmount) : undefined;
         data.pumpUnit = pumpUnit;
+        if (pumpSide) data.pumpSide = pumpSide;
       }
       const res = await fetch(`/api/logs/${log.id}`, {
         method: "PATCH",
@@ -109,14 +115,17 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
             </div>
             <div>
               <p className="text-sm text-text-secondary mb-2">Feed Type</p>
-              <div className="flex gap-2">
-                {(["BREAST", "BOTTLE", "BOTH"] as const).map((t) => (
-                  <button key={t} type="button" onClick={() => setFeedType(t)} className={`flex-1 px-3 py-2 rounded-full text-sm ${feedType === t ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}>
-                    {t === "BREAST" ? "Breast" : t === "BOTTLE" ? "Bottle" : "Both"}
+              <div className="flex gap-2 flex-wrap">
+                {(["BREAST", "BOTTLE", "BOTH", "SOLID"] as const).map((t) => (
+                  <button key={t} type="button" onClick={() => setFeedType(t)} className={`flex-1 min-w-0 px-3 py-2 rounded-full text-sm ${feedType === t ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}>
+                    {t === "BREAST" ? "Breast" : t === "BOTTLE" ? "Bottle" : t === "BOTH" ? "Both" : "Solid"}
                   </button>
                 ))}
               </div>
             </div>
+            {feedType === "SOLID" && (
+              <Input label="Food Name" type="text" value={foodName} onChange={(e) => setFoodName(e.target.value)} placeholder="e.g., Rice cereal, Mashed banana" />
+            )}
           </>
         )}
 
@@ -157,6 +166,16 @@ export function EditLogModal({ open, onClose, log }: EditLogModalProps) {
               <div className="flex gap-2">
                 <button type="button" onClick={() => setPumpUnit("OZ")} className={`px-4 py-2 rounded-full text-sm ${pumpUnit === "OZ" ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}>OZ</button>
                 <button type="button" onClick={() => setPumpUnit("ML")} className={`px-4 py-2 rounded-full text-sm ${pumpUnit === "ML" ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}>ML</button>
+              </div>
+            </div>
+            <div>
+              <p className="text-sm text-text-secondary mb-2">Side <span className="text-text-muted">(optional)</span></p>
+              <div className="grid grid-cols-3 gap-2">
+                {(["LEFT", "RIGHT", "BOTH"] as const).map((s) => (
+                  <button key={s} type="button" onClick={() => setPumpSide(pumpSide === s ? "" : s)} className={`px-3 py-2 rounded-2xl text-sm ${pumpSide === s ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}>
+                    {s === "LEFT" ? "Left" : s === "RIGHT" ? "Right" : "Both"}
+                  </button>
+                ))}
               </div>
             </div>
           </div>

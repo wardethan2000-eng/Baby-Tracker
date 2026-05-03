@@ -54,8 +54,12 @@ export default function RecentActivity() {
   const childName = children.find((c: any) => c.id === selectedChildId)?.name || "Baby";
 
   const getDetail = (log: any) => {
-    if (log.type === "FEED" && log.feedAmount) {
-      return `${log.feedAmount} ${log.feedUnit?.toLowerCase() || "oz"}`;
+    if (log.type === "FEED") {
+      const parts: string[] = [];
+      if (log.foodName) parts.push(log.foodName);
+      else if (log.feedType === "SOLID") parts.push("Solid food");
+      if (log.feedAmount) parts.push(`${log.feedAmount} ${log.feedUnit?.toLowerCase() || "oz"}`);
+      return parts.join(" · ");
     }
     if (log.type === "DIAPER" && log.diaperType) {
       return log.diaperType === "PEE" ? "Pee" : log.diaperType === "POOP" ? "Poop" : "Pee + poop";
@@ -65,7 +69,8 @@ export default function RecentActivity() {
       return `${log.nurseDuration} min${side}`;
     }
     if (log.type === "PUMP" && log.pumpAmount) {
-      return `${log.pumpAmount} ${log.pumpUnit?.toLowerCase() || "oz"}`;
+      const side = log.pumpSide ? ` · ${log.pumpSide === "BOTH" ? "Both sides" : log.pumpSide === "LEFT" ? "Left side" : "Right side"}` : "";
+      return `${log.pumpAmount} ${log.pumpUnit?.toLowerCase() || "oz"}${side}`;
     }
     return "";
   };

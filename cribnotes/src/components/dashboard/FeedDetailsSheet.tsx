@@ -34,7 +34,8 @@ export default function FeedDetailsSheet({ open, onClose, logId }: FeedDetailsSh
   const queryClient = useQueryClient();
   const { unit, saveUnit } = useLastFeedUnit();
   const [amount, setAmount] = useState(0);
-  const [feedType, setFeedType] = useState<"BREAST" | "BOTTLE" | "BOTH">("BOTTLE");
+  const [feedType, setFeedType] = useState<"BREAST" | "BOTTLE" | "BOTH" | "SOLID">("BOTTLE");
+  const [foodName, setFoodName] = useState("");
   const [notes, setNotes] = useState("");
 
   const mutation = useMutation({
@@ -52,6 +53,7 @@ export default function FeedDetailsSheet({ open, onClose, logId }: FeedDetailsSh
       toast.success("Feeding details saved");
       onClose();
       setAmount(0);
+      setFoodName("");
       setNotes("");
     },
   });
@@ -61,25 +63,57 @@ export default function FeedDetailsSheet({ open, onClose, logId }: FeedDetailsSh
       feedAmount: amount,
       feedUnit: unit,
       feedType,
+      ...(foodName.trim() ? { foodName: foodName.trim() } : {}),
       notes: notes || undefined,
     });
   };
 
   const handleSkip = () => {
     setAmount(0);
+    setFoodName("");
     setNotes("");
     onClose();
   };
 
-  const feedTypes: { value: "BREAST" | "BOTTLE" | "BOTH"; label: string }[] = [
+  const feedTypes: { value: "BREAST" | "BOTTLE" | "BOTH" | "SOLID"; label: string }[] = [
     { value: "BREAST", label: "Breast" },
     { value: "BOTTLE", label: "Bottle" },
     { value: "BOTH", label: "Both" },
+    { value: "SOLID", label: "Solid" },
   ];
 
   return (
     <Modal open={open} onClose={handleSkip} title="Add feeding details (optional)">
       <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-text-secondary mb-2">Feed Type</label>
+          <div className="flex gap-2">
+            {feedTypes.map((t) => (
+              <button
+                key={t.value}
+                onClick={() => setFeedType(t.value)}
+                className={`flex-1 px-4 py-2 rounded-full text-sm ${feedType === t.value ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {feedType === "SOLID" && (
+          <div>
+            <label className="block text-sm font-medium text-text-secondary mb-2">Food Name</label>
+            <input
+              type="text"
+              value={foodName}
+              onChange={(e) => setFoodName(e.target.value)}
+              placeholder="e.g., Rice cereal, Mashed banana..."
+              className="w-full p-3 bg-elevated rounded-2xl text-text-primary placeholder:text-text-muted border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+              maxLength={200}
+            />
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-medium text-text-secondary mb-2">Amount</label>
           <div className="flex items-center gap-3">
@@ -113,21 +147,6 @@ export default function FeedDetailsSheet({ open, onClose, logId }: FeedDetailsSh
             >
               ML
             </button>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-text-secondary mb-2">Feed Type</label>
-          <div className="flex gap-2">
-            {feedTypes.map((t) => (
-              <button
-                key={t.value}
-                onClick={() => setFeedType(t.value)}
-                className={`flex-1 px-4 py-2 rounded-full text-sm ${feedType === t.value ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}
-              >
-                {t.label}
-              </button>
-            ))}
           </div>
         </div>
 

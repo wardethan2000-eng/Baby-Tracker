@@ -12,6 +12,14 @@ interface PumpDetailsSheetProps {
   logId: string | null;
 }
 
+type PumpSide = "LEFT" | "RIGHT" | "BOTH";
+
+const sides: { value: PumpSide; label: string }[] = [
+  { value: "LEFT", label: "Left" },
+  { value: "RIGHT", label: "Right" },
+  { value: "BOTH", label: "Both" },
+];
+
 function useLastPumpUnit() {
   const [unit, setUnit] = useState<"OZ" | "ML">("OZ");
 
@@ -34,6 +42,7 @@ export default function PumpDetailsSheet({ open, onClose, logId }: PumpDetailsSh
   const queryClient = useQueryClient();
   const { unit, saveUnit } = useLastPumpUnit();
   const [amount, setAmount] = useState(0);
+  const [side, setSide] = useState<PumpSide | "">("");
   const [notes, setNotes] = useState("");
 
   const mutation = useMutation({
@@ -58,6 +67,7 @@ export default function PumpDetailsSheet({ open, onClose, logId }: PumpDetailsSh
 
   const handleClose = () => {
     setAmount(0);
+    setSide("");
     setNotes("");
     onClose();
   };
@@ -67,6 +77,7 @@ export default function PumpDetailsSheet({ open, onClose, logId }: PumpDetailsSh
     mutation.mutate({
       pumpAmount: amount,
       pumpUnit: unit,
+      ...(side ? { pumpSide: side } : {}),
       notes: notes || undefined,
     });
   };
@@ -106,6 +117,30 @@ export default function PumpDetailsSheet({ open, onClose, logId }: PumpDetailsSh
               className={`px-4 py-1.5 rounded-full text-sm ${unit === "ML" ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}
             >
               ML
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <p className="text-sm font-medium text-text-secondary mb-2">Side <span className="text-text-muted">(optional)</span></p>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={() => setSide(side === "LEFT" ? "" : "LEFT")}
+              className={`px-3 py-3 rounded-2xl text-sm font-medium ${side === "LEFT" ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}
+            >
+              Left
+            </button>
+            <button
+              onClick={() => setSide(side === "RIGHT" ? "" : "RIGHT")}
+              className={`px-3 py-3 rounded-2xl text-sm font-medium ${side === "RIGHT" ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}
+            >
+              Right
+            </button>
+            <button
+              onClick={() => setSide(side === "BOTH" ? "" : "BOTH")}
+              className={`px-3 py-3 rounded-2xl text-sm font-medium ${side === "BOTH" ? "bg-primary text-base" : "bg-elevated text-text-secondary"}`}
+            >
+              Both
             </button>
           </div>
         </div>

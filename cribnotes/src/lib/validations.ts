@@ -37,12 +37,14 @@ export const createLogSchema = z.object({
   notes: z.string().max(500).optional(),
   feedAmount: z.number().min(0).optional(),
   feedUnit: z.enum(["OZ", "ML"]).optional(),
-  feedType: z.enum(["BREAST", "BOTTLE", "BOTH"]).optional(),
+  feedType: z.enum(["BREAST", "BOTTLE", "BOTH", "SOLID"]).optional(),
+  foodName: z.string().max(200).optional(),
   diaperType: z.enum(["PEE", "POOP", "BOTH"]).optional(),
   nurseDuration: z.number().min(0).optional(),
   nurseSide: z.enum(["LEFT", "RIGHT", "BOTH"]).optional(),
   pumpAmount: z.number().min(0).optional(),
   pumpUnit: z.enum(["OZ", "ML"]).optional(),
+  pumpSide: z.enum(["LEFT", "RIGHT", "BOTH"]).optional(),
 });
 
 export const updateLogSchema = z.object({
@@ -50,12 +52,14 @@ export const updateLogSchema = z.object({
   notes: z.string().max(500).optional(),
   feedAmount: z.number().min(0).optional(),
   feedUnit: z.enum(["OZ", "ML"]).optional(),
-  feedType: z.enum(["BREAST", "BOTTLE", "BOTH"]).optional(),
+  feedType: z.enum(["BREAST", "BOTTLE", "BOTH", "SOLID"]).optional(),
+  foodName: z.string().max(200).optional(),
   diaperType: z.enum(["PEE", "POOP", "BOTH"]).optional(),
   nurseDuration: z.number().min(0).optional(),
   nurseSide: z.enum(["LEFT", "RIGHT", "BOTH"]).optional(),
   pumpAmount: z.number().min(0).optional(),
   pumpUnit: z.enum(["OZ", "ML"]).optional(),
+  pumpSide: z.enum(["LEFT", "RIGHT", "BOTH"]).optional(),
 });
 
 export const createNoteSchema = z.object({

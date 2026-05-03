@@ -24,8 +24,12 @@ export function LogRow({ log, onEdit, onDelete }: LogRowProps) {
   const cfg = typeConfig[log.type] || typeConfig.WAKE;
 
   const getDetails = () => {
-    if (log.type === "FEED" && log.feedAmount) {
-      return `${log.feedAmount} ${log.feedUnit?.toLowerCase() || "oz"}`;
+    if (log.type === "FEED") {
+      const parts: string[] = [];
+      if (log.feedAmount) parts.push(`${log.feedAmount} ${log.feedUnit?.toLowerCase() || "oz"}`);
+      if (log.foodName) parts.push(log.foodName);
+      if (log.feedType === "SOLID" && !log.foodName) parts.push("Solid food");
+      return parts.join(" · ");
     }
     if (log.type === "DIAPER" && log.diaperType) {
       return log.diaperType === "PEE" ? "Pee" : log.diaperType === "POOP" ? "Poop" : "Pee + poop";
@@ -35,7 +39,8 @@ export function LogRow({ log, onEdit, onDelete }: LogRowProps) {
       return `${log.nurseDuration} min${side}`;
     }
     if (log.type === "PUMP" && log.pumpAmount) {
-      return `${log.pumpAmount} ${log.pumpUnit?.toLowerCase() || "oz"}`;
+      const side = log.pumpSide ? ` · ${log.pumpSide === "BOTH" ? "Both sides" : log.pumpSide === "LEFT" ? "Left side" : "Right side"}` : "";
+      return `${log.pumpAmount} ${log.pumpUnit?.toLowerCase() || "oz"}${side}`;
     }
     return "";
   };

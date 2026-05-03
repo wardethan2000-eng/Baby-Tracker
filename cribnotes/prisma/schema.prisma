@@ -37,6 +37,7 @@ enum FeedType {
   BREAST
   BOTTLE
   BOTH
+  SOLID
 }
 
 enum DiaperType {
@@ -170,11 +171,13 @@ model Log {
   feedAmount Float?
   feedUnit   FeedUnit?
   feedType   FeedType?
+  foodName   String?
   diaperType DiaperType?
   nurseDuration Int?
   nurseSide   NurseSide?
   pumpAmount Float?
   pumpUnit   FeedUnit?
+  pumpSide   NurseSide?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

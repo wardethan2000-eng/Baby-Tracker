@@ -33,6 +33,8 @@ export async function PATCH(request: Request, { params }: { params: { id: string
       ...(data.nurseSide && { nurseSide: data.nurseSide }),
       ...(data.pumpAmount !== undefined && { pumpAmount: data.pumpAmount }),
       ...(data.pumpUnit && { pumpUnit: data.pumpUnit }),
+      ...(data.pumpSide && { pumpSide: data.pumpSide }),
+      ...(data.foodName !== undefined && { foodName: data.foodName }),
     };
 
     const updated = Object.keys(updateData).length
