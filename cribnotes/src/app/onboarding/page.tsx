@@ -20,7 +20,7 @@ export default async function OnboardingPage() {
   }
 
   if (user.onboardingDone) {
-    redirect("/");
+    redirect("/home");
   }
 
   return <OnboardingFlow userName={user.name || session.user.name || "there"} />;

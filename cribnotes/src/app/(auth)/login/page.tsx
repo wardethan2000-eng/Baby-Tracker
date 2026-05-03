@@ -41,7 +41,7 @@ export default function LoginPage() {
       if (result?.error) {
         toast.error("Invalid email or password");
       } else if (result?.ok) {
-        router.push("/");
+        router.push("/home");
         router.refresh();
       }
     } catch {

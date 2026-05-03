@@ -51,7 +51,7 @@ function InviteContent({ token }: { token: string }) {
       const res = await fetch(`/api/invite/${token}/accept`, { method: "POST" });
       if (res.ok) {
         toast.success("Access granted!");
-        router.push("/");
+        router.push("/home");
       } else {
         const err = await res.json();
         toast.error(err.error || "Failed to accept invite");
@@ -102,7 +102,7 @@ function InviteContent({ token }: { token: string }) {
           <Button variant="primary" onClick={handleAccept} disabled={accepting}>
             {accepting ? "Accepting..." : "Accept Invitation"}
           </Button>
-          <Button variant="ghost" onClick={() => router.push("/")}>Decline</Button>
+          <Button variant="ghost" onClick={() => router.push("/home")}>Decline</Button>
         </div>
       </div>
     );

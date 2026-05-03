@@ -84,7 +84,7 @@ export function OnboardingFlow({ userName }: OnboardingFlowProps) {
       if (!res.ok) throw new Error("Failed");
       setOnboarded(true);
       await update();
-      router.replace("/");
+      router.replace("/home");
       router.refresh();
     } catch {
       toast.error("Something went wrong");

@@ -5,6 +5,8 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
 
+  const isLandingPage = pathname === "/";
+
   const isAuthRoute =
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup") ||
@@ -13,14 +15,14 @@ export default auth((req) => {
 
   const isInviteRoute = pathname.startsWith("/invite");
 
-  if (isInviteRoute) return NextResponse.next();
+  if (isInviteRoute || isLandingPage) return NextResponse.next();
 
   if (!isLoggedIn && !isAuthRoute) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
   if (isLoggedIn && isAuthRoute) {
-    return NextResponse.redirect(new URL("/", req.url));
+    return NextResponse.redirect(new URL("/home", req.url));
   }
 
   return NextResponse.next();
