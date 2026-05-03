@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { format, startOfDay, endOfDay, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from "date-fns";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
