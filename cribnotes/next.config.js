@@ -10,8 +10,9 @@ const nextConfig = {
         ],
       },
       {
-        source: "/(.*)?",
+        source: "/:path((?!_next/static|_next/image|icons|favicon.ico|manifest.json|sw.js|push-sw.js|api).*)",
         headers: [
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
