@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { updateLogSchema } from "@/lib/validations";
 import { canAccessChild } from "@/lib/access";
+import { broadcastEvent } from "@/lib/broadcast";
 
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   const session = await auth();
@@ -19,6 +20,8 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     if (!hasAccess) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
+
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
 
     const body = await request.json();
     const data = updateLogSchema.parse(body);
@@ -38,8 +41,10 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     };
 
     let wakeLog = null;
+    let isTimerStop = false;
 
     if (data.stopTimer && log.endedAt === null && log.startedAt) {
+      isTimerStop = true;
       const now = new Date();
       updateData.endedAt = now;
 
@@ -57,6 +62,14 @@ export async function PATCH(request: Request, { params }: { params: { id: string
             occurredAt: now,
           },
         });
+        broadcastEvent({
+          type: "log-create",
+          childId: log.childId,
+          logId: wakeLog.id,
+          logType: "WAKE",
+          userId,
+          userName: user?.name || "Someone",
+        });
       }
     }
 
@@ -72,6 +85,15 @@ export async function PATCH(request: Request, { params }: { params: { id: string
         UPDATE "Log" SET "diaperType" = ${data.diaperType}::"DiaperType" WHERE id = ${params.id}
       `;
     }
+
+    broadcastEvent({
+      type: isTimerStop ? "timer-stop" : "log-update",
+      childId: log.childId,
+      logId: log.id,
+      logType: log.type,
+      userId,
+      userName: user?.name || "Someone",
+    });
 
     const response: any = { ...updated, diaperType: data.diaperType ?? log.diaperType ?? null };
     if (wakeLog) {
@@ -114,6 +136,16 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     const deleted = await prisma.log.update({
       where: { id: params.id },
       data: { deletedAt: new Date() },
+    });
+
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+    broadcastEvent({
+      type: "log-delete",
+      childId: log.childId,
+      logId: log.id,
+      logType: log.type,
+      userId,
+      userName: user?.name || "Someone",
     });
 
     return NextResponse.json(deleted);

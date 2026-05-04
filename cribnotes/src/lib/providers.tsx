@@ -6,6 +6,8 @@ import { ThemeProvider, useTheme } from "next-themes";
 import { Toaster } from "sonner";
 import { useState } from "react";
 import { ServiceWorkerRegister } from "@/components/shared/ServiceWorkerRegister";
+import { useSSE } from "@/lib/useSSE";
+import { useAppStore } from "@/lib/store";
 
 function ThemedToaster() {
   const { resolvedTheme } = useTheme();
@@ -16,6 +18,12 @@ function ThemedToaster() {
       richColors
     />
   );
+}
+
+function SSEConnector() {
+  const selectedChildId = useAppStore((s) => s.selectedChildId);
+  useSSE(selectedChildId);
+  return null;
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -36,6 +44,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <ServiceWorkerRegister />
+          <SSEConnector />
           {children}
           <ThemedToaster />
         </ThemeProvider>

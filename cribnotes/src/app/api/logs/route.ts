@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { createLogSchema } from "@/lib/validations";
 import { canAccessChild } from "@/lib/access";
 import { Prisma } from "@prisma/client";
+import { broadcastEvent } from "@/lib/broadcast";
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -85,6 +86,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+
     const TIMER_TYPES: string[] = ["SLEEP", "NURSE", "PUMP"];
     const isTimerStart = TIMER_TYPES.includes(data.type) && data.startedAt;
 
@@ -116,6 +119,15 @@ export async function POST(request: Request) {
           data: updateData,
         });
 
+        broadcastEvent({
+          type: "timer-stop",
+          childId: data.childId,
+          logId: existingTimer.id,
+          logType: existingTimer.type,
+          userId,
+          userName: user?.name || "Someone",
+        });
+
         if (existingTimer.type === "SLEEP") {
           await prisma.log.create({
             data: {
@@ -124,6 +136,14 @@ export async function POST(request: Request) {
               type: "WAKE",
               occurredAt: now,
             },
+          });
+          broadcastEvent({
+            type: "log-create",
+            childId: data.childId,
+            logId: existingTimer.id,
+            logType: "WAKE",
+            userId,
+            userName: user?.name || "Someone",
           });
         }
       }
@@ -156,6 +176,18 @@ export async function POST(request: Request) {
       await prisma.$executeRaw`
         UPDATE "Log" SET "diaperType" = ${data.diaperType}::"DiaperType" WHERE id = ${log.id}
       `;
+    }
+
+    broadcastEvent({
+      type: isTimerStart ? "timer-start" : "log-create",
+      childId: data.childId,
+      logId: log.id,
+      logType: data.type,
+      userId,
+      userName: user?.name || "Someone",
+    });
+
+    if (data.diaperType) {
       return NextResponse.json({ ...log, diaperType: data.diaperType });
     }
 

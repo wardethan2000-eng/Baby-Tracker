@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canAccessChild } from "@/lib/access";
+import { broadcastEvent } from "@/lib/broadcast";
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   const session = await auth();
@@ -28,6 +29,16 @@ export async function POST(request: Request, { params }: { params: { id: string 
       data: {
         deletedAt: null,
       },
+    });
+
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+    broadcastEvent({
+      type: "log-restore",
+      childId: log.childId,
+      logId: log.id,
+      logType: log.type,
+      userId,
+      userName: user?.name || "Someone",
     });
 
     return NextResponse.json(restoredLog);
