@@ -85,6 +85,12 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
+  trialStartsAt  DateTime  @default(now())
+  trialEndsAt     DateTime?
+  paidAt          DateTime?
+  stripeCustomerId String?
+  stripeSessionId  String?
+
   ownedChildren Child[]      @relation("ChildOwner")
   sharedAccess   ChildShare[]
   logs           Log[]

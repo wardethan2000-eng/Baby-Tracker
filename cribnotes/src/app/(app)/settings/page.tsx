@@ -3,15 +3,17 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { signOut } from "next-auth/react";
-import { Bell, Pencil, Trash2, Plus, Download, UserPlus, Smartphone } from "lucide-react";
+import { Bell, Pencil, Trash2, Plus, Download, UserPlus, Smartphone, Check, Loader2, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 import { useAppStore } from "@/lib/store";
 import { usePwaInstall } from "@/lib/usePwaInstall";
 import { getPushDiagnostics, isPushSupported, subscribeToPush } from "@/lib/push-client";
 import { formatChildAge, formatDate } from "@/lib/utils";
+import { STRIPE_CONFIGURED } from "@/lib/stripe-client";
 
 type PersonRole = "PARENT" | "CARETAKER" | "BABYSITTER";
 
@@ -43,6 +45,7 @@ async function api(url: string, method = "GET", body?: unknown) {
 export default function SettingsPage() {
   const queryClient = useQueryClient();
   const { selectedChildId, setSelectedChildId } = useAppStore();
+  const { data: session, update: updateSession } = useSession();
 
   const { data: user } = useQuery({ queryKey: ["user"], queryFn: () => api("/api/user/me") });
   const { data: children = [] } = useQuery({ queryKey: ["children"], queryFn: () => api("/api/children") });
@@ -77,6 +80,7 @@ export default function SettingsPage() {
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [notificationDebug, setNotificationDebug] = useState<string | null>(null);
   const [feedInterval, setFeedInterval] = useState(120);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useEffect(() => {
     setNotificationPermission(isPushSupported() ? Notification.permission : "unsupported");
@@ -87,6 +91,18 @@ export default function SettingsPage() {
       setFeedInterval(notificationPreferences.feedReminderIntervalMinutes);
     }
   }, [notificationPreferences?.feedReminderIntervalMinutes]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("payment") === "success") {
+      toast.success("Payment successful! Updating your account...");
+      updateSession({});
+      window.history.replaceState({}, "", "/settings");
+    } else if (params.get("payment") === "cancel") {
+      toast.error("Payment was cancelled.");
+      window.history.replaceState({}, "", "/settings");
+    }
+  }, []);
 
   const updateProfile = useMutation({
     mutationFn: (data: { name?: string; designation?: PersonRole; currentPassword?: string; password?: string }) => api("/api/user/me", "PATCH", data),
@@ -205,6 +221,23 @@ export default function SettingsPage() {
       toast.error(error.message || "Could not enable notifications");
     } finally {
       setIsSubscribing(false);
+    }
+  };
+
+  const handleCheckout = async () => {
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch("/api/stripe/checkout", { method: "POST" });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        throw new Error(data.error || "Failed to start checkout");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Checkout failed");
+    } finally {
+      setCheckoutLoading(false);
     }
   };
 
@@ -507,6 +540,43 @@ export default function SettingsPage() {
           )}
         </div>
       </section>
+
+      {STRIPE_CONFIGURED && (
+        <section className="space-y-4">
+          <h2 className="font-display text-lg font-semibold text-text-primary">Billing</h2>
+          <div className="bg-surface rounded-2xl p-4">
+            {session?.user?.paidAt ? (
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center">
+                  <Check size={16} className="text-success" />
+                </div>
+                <div>
+                  <p className="font-medium text-text-primary">Lifetime Access</p>
+                  <p className="text-sm text-text-secondary">Paid on {new Date(session.user.paidAt).toLocaleDateString()}</p>
+                </div>
+              </div>
+            ) : session?.user?.trialEndsAt ? (
+              <div className="space-y-3">
+                <div>
+                  <p className="font-medium text-text-primary">
+                    {new Date(session.user.trialEndsAt) > new Date() ? "Free Trial" : "Trial Expired"}
+                  </p>
+                  <p className="text-sm text-text-secondary">
+                    {new Date(session.user.trialEndsAt) > new Date()
+                      ? `${Math.max(0, Math.ceil((new Date(session.user.trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))} days remaining`
+                      : "Your 30-day trial has ended. Upgrade to continue using CribNotes."}
+                  </p>
+                </div>
+                <Button full onClick={handleCheckout} disabled={checkoutLoading}>
+                  {checkoutLoading ? <Loader2 size={18} className="animate-spin" /> : <><CreditCard size={16} className="mr-1" /> Pay $15 — Lifetime Access</>}
+                </Button>
+              </div>
+            ) : (
+              <p className="text-sm text-text-secondary">Loading billing info...</p>
+            )}
+          </div>
+        </section>
+      )}
 
       <section className="space-y-4">
         <h2 className="font-display text-lg font-semibold text-text-primary">My Profile</h2>

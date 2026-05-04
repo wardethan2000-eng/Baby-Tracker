@@ -3,7 +3,7 @@
   "name": "CribNotes",
   "short_name": "CribNotes",
   "description": "Track your baby's activity, effortlessly",
-  "start_url": "/",
+  "start_url": "/home",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],

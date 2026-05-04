@@ -64,6 +64,8 @@ export function useSSE(childId: string | null) {
       esRef.current.close();
     }
 
+    retryRef.current = 0;
+
     const es = new EventSource(`/api/events?childId=${childId}`);
     esRef.current = es;
 
@@ -93,7 +95,20 @@ export function useSSE(childId: string | null) {
   useEffect(() => {
     connect();
 
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        if (retryTimerRef.current) {
+          clearTimeout(retryTimerRef.current);
+          retryTimerRef.current = null;
+        }
+        connect();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
       if (esRef.current) {
         esRef.current.close();
         esRef.current = null;

@@ -1,9 +1,47 @@
-self.addEventListener("install", () => {
+const CACHE_NAME = "cribnotes-v1";
+const STATIC_ASSETS = [
+  "/",
+  "/home",
+  "/login",
+  "/manifest.json",
+];
+
+self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
+});
+
+self.addEventListener("fetch", (event) => {
+  const url = new URL(event.request.url);
+
+  if (url.pathname.startsWith("/api/")) {
+    return;
+  }
+
+  if (event.request.method !== "GET") {
+    return;
+  }
+
+  if (url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot)$/)) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((response) => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, clone);
+            });
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
 });
 
 self.addEventListener("push", (event) => {
@@ -24,7 +62,7 @@ self.addEventListener("push", (event) => {
     badge: "/icons/icon-192.png",
     tag: payload.tag || "cribnotes",
     data: {
-      url: payload.url || "/",
+      url: payload.url || "/home",
     },
   };
 
@@ -33,7 +71,7 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || "/";
+  const url = event.notification.data?.url || "/home";
 
   event.waitUntil(
     (async () => {

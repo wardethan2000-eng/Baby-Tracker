@@ -14,16 +14,45 @@ async function getUserDesignation(userId: string): Promise<UserDesignation> {
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
   trustHost: true,
+  cookies: {
+    sessionToken: {
+      name: "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 30 * 24 * 60 * 60,
+      },
+    },
+    callbackUrl: {
+      name: "next-auth.callback-url",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 30 * 24 * 60 * 60,
+      },
+    },
+    csrfToken: {
+      name: "next-auth.csrf-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 30 * 24 * 60 * 60,
+      },
+    },
+  },
   pages: {
     signIn: "/login",
     error: "/login",
   },
   logger: {
-    // A JWTSessionError fires every request from a browser holding a session
-    // cookie encrypted with a previous NEXTAUTH_SECRET. The middleware already
-    // treats it as logged-out and redirects to /login, so suppress the spam.
     error(error) {
       if (error.name === "JWTSessionError") return;
       console.error(error);
@@ -57,6 +86,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           onboardingDone: user.onboardingDone,
           designation: await getUserDesignation(user.id),
+          paidAt: user.paidAt?.toISOString() || null,
+          trialEndsAt: user.trialEndsAt?.toISOString() || null,
         };
       },
     }),
@@ -67,12 +98,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = user.id;
         token.onboardingDone = (user as any).onboardingDone;
         token.designation = (user as any).designation;
+        token.paidAt = (user as any).paidAt;
+        token.trialEndsAt = (user as any).trialEndsAt;
       }
       if (trigger === "update" && token.id) {
         const dbUser = await prisma.user.findUnique({ where: { id: token.id as string } });
         if (dbUser) {
           token.onboardingDone = dbUser.onboardingDone;
           token.designation = await getUserDesignation(dbUser.id);
+          token.paidAt = dbUser.paidAt?.toISOString() || null;
+          token.trialEndsAt = dbUser.trialEndsAt?.toISOString() || null;
         }
       }
       return token;
@@ -82,6 +117,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id as string;
         session.user.onboardingDone = token.onboardingDone as boolean;
         session.user.designation = token.designation as any;
+        session.user.paidAt = (token.paidAt as string | null) || null;
+        session.user.trialEndsAt = (token.trialEndsAt as string | null) || null;
       }
       return session;
     },

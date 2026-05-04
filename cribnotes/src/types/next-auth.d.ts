@@ -5,6 +5,8 @@ declare module "next-auth" {
     id: string;
     onboardingDone?: boolean;
     designation?: "PARENT" | "CARETAKER" | "BABYSITTER";
+    paidAt?: string | null;
+    trialEndsAt?: string | null;
   }
   interface Session {
     user: {
@@ -13,6 +15,8 @@ declare module "next-auth" {
       name?: string | null;
       onboardingDone?: boolean;
       designation?: "PARENT" | "CARETAKER" | "BABYSITTER";
+      paidAt?: string | null;
+      trialEndsAt?: string | null;
     };
   }
 }
@@ -22,5 +26,7 @@ declare module "next-auth/jwt" {
     id: string;
     onboardingDone?: boolean;
     designation?: "PARENT" | "CARETAKER" | "BABYSITTER";
+    paidAt?: string | null;
+    trialEndsAt?: string | null;
   }
 }

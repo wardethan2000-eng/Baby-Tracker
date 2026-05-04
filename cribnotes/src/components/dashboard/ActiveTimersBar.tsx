@@ -118,6 +118,10 @@ export default function ActiveTimersBar() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stopTimer: true }),
       });
+      if (res.status === 401) {
+        window.location.href = "/login";
+        throw new Error("Session expired");
+      }
       if (!res.ok) throw new Error("Failed to stop timer");
       return res.json();
     },

@@ -13,7 +13,7 @@ import { useAppStore } from "@/lib/store";
 import { useActiveTimers } from "@/lib/useActiveTimers";
 import { format } from "date-fns";
 
-const TIMER_TYPES = ["SLEEP", "NURSE", "PUMP"] as const;
+const TIMER_TYPES = ["SLEEP", "NURSE"] as const;
 type TimerType = (typeof TIMER_TYPES)[number];
 
 export default function QuickLogGrid() {
@@ -38,6 +38,10 @@ export default function QuickLogGrid() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       }).then(async (r) => {
+        if (r.status === 401) {
+          window.location.href = "/login";
+          throw new Error("Session expired");
+        }
         if (!r.ok) throw new Error("Failed to log");
         return r.json();
       }),
@@ -67,16 +71,12 @@ export default function QuickLogGrid() {
           const labels: Record<string, string> = {
             SLEEP: "Started sleep timer",
             NURSE: "Started nursing timer",
-            PUMP: "Started pumping timer",
           };
           toast.success(labels[type]);
 
           if (type === "NURSE") {
             setNurseLogId(data.id);
             setNurseSheetOpen(true);
-          } else if (type === "PUMP") {
-            setPumpLogId(data.id);
-            setPumpSheetOpen(true);
           }
         },
         onError: () => {
@@ -92,8 +92,14 @@ export default function QuickLogGrid() {
       return;
     }
 
-    if (TIMER_TYPES.includes(type as TimerType)) {
-      startTimer(type as TimerType);
+    if (type === "SLEEP" || type === "NURSE") {
+      startTimer(type);
+      return;
+    }
+
+    if (type === "PUMP") {
+      setPumpLogId(pumpTimer ? pumpTimer.logId : null);
+      setPumpSheetOpen(true);
       return;
     }
 
@@ -186,7 +192,7 @@ export default function QuickLogGrid() {
           label={pumpTimer ? "Pumping" : "Pumped"}
           color="secondary"
           onClick={() => handleLog("PUMP")}
-          disabled={!!pumpTimer || pending}
+          disabled={pending}
           timerLabel={getTimerElapsed(pumpTimer)}
         />
       </div>

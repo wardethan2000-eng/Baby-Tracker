@@ -21,7 +21,8 @@ export function useActiveTimers() {
       return res.json();
     },
     enabled: !!selectedChildId,
-    staleTime: 10_000,
+    staleTime: 5_000,
+    refetchInterval: 15_000,
     refetchOnWindowFocus: true,
   });
 
