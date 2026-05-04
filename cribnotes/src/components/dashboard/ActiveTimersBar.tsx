@@ -52,9 +52,8 @@ function formatElapsed(ms: number): string {
   return `${seconds}s`;
 }
 
-function TimerRow({ timer, onStop }: { timer: ActiveTimer; onStop: (timer: ActiveTimer) => void }) {
+function TimerRow({ timer, stopping, onStop }: { timer: ActiveTimer; stopping: boolean; onStop: (timer: ActiveTimer) => void }) {
   const [elapsed, setElapsed] = useState(0);
-  const [stopping, setStopping] = useState(false);
 
   useEffect(() => {
     const startMs = new Date(timer.startedAt).getTime();
@@ -94,10 +93,7 @@ function TimerRow({ timer, onStop }: { timer: ActiveTimer; onStop: (timer: Activ
         </span>
       </div>
       <button
-        onClick={() => {
-          setStopping(true);
-          onStop(timer);
-        }}
+        onClick={() => onStop(timer)}
         disabled={stopping}
         className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-elevated border border-border text-sm font-medium text-text-secondary hover:text-danger hover:border-danger/50 transition-colors disabled:opacity-50"
       >
@@ -110,6 +106,7 @@ function TimerRow({ timer, onStop }: { timer: ActiveTimer; onStop: (timer: Activ
 
 export default function ActiveTimersBar() {
   const { timersForChild, removeTimer, invalidateTimers } = useActiveTimers();
+  const [stoppingId, setStoppingId] = useState<string | null>(null);
 
   const stopMutation = useMutation({
     mutationFn: async (timer: ActiveTimer) => {
@@ -122,10 +119,23 @@ export default function ActiveTimersBar() {
         window.location.href = "/login";
         throw new Error("Session expired");
       }
-      if (!res.ok) throw new Error("Failed to stop timer");
+      if (res.status === 404) {
+        removeTimer(timer.logId);
+        invalidateTimers();
+        throw new Error("Timer already stopped");
+      }
+      if (!res.ok) {
+        let detail = "Failed to stop timer";
+        try {
+          const body = await res.json();
+          if (body.error) detail = typeof body.error === "string" ? body.error : detail;
+        } catch {}
+        throw new Error(detail);
+      }
       return res.json();
     },
     onSuccess: (data, timer) => {
+      setStoppingId(null);
       removeTimer(timer.logId);
       invalidateTimers();
 
@@ -141,9 +151,11 @@ export default function ActiveTimersBar() {
         toast.success("Woke up logged");
       }
     },
-    onError: (_, timer) => {
+    onError: (err, timer) => {
+      setStoppingId(null);
+      invalidateTimers();
       const config = TIMER_CONFIG[timer.type];
-      toast.error(`Failed to stop ${config?.label?.toLowerCase() || "timer"}`);
+      toast.error(err.message || `Failed to stop ${config?.label?.toLowerCase() || "timer"}`);
     },
   });
 
@@ -155,7 +167,11 @@ export default function ActiveTimersBar() {
         <TimerRow
           key={timer.logId}
           timer={timer}
-          onStop={(t) => stopMutation.mutate(t)}
+          stopping={stoppingId === timer.logId}
+          onStop={(t) => {
+            setStoppingId(t.logId);
+            stopMutation.mutate(t);
+          }}
         />
       ))}
     </div>

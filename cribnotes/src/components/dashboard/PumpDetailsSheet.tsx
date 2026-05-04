@@ -50,43 +50,6 @@ export default function PumpDetailsSheet({ open, onClose, logId, isTimer = false
   const [amount, setAmount] = useState(0);
   const [side, setSide] = useState<PumpSide>("BOTH");
   const [notes, setNotes] = useState("");
-  const [startTimer, setStartTimer] = useState(false);
-
-  const createMutation = useMutation({
-    mutationFn: (data: object) =>
-      fetch("/api/logs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      }).then(async (r) => {
-        if (r.status === 401) {
-          window.location.href = "/login";
-          throw new Error("Session expired");
-        }
-        if (!r.ok) throw new Error("Failed to log");
-        return r.json();
-      }),
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["logs"] });
-      if (startTimer) {
-        const now = new Date().toISOString();
-        addTimer({
-          logId: data.id,
-          type: "PUMP",
-          startedAt: now,
-          childId: selectedChildId!,
-        });
-        invalidateTimers();
-        toast.success("Pumping timer started");
-      } else {
-        toast.success("Pumping logged");
-      }
-      handleClose();
-    },
-    onError: () => {
-      toast.error(startTimer ? "Failed to start pump timer" : "Failed to log pumping");
-    },
-  });
 
   const patchMutation = useMutation({
     mutationFn: (data: object) =>
@@ -108,23 +71,77 @@ export default function PumpDetailsSheet({ open, onClose, logId, isTimer = false
     },
   });
 
+  const createLogMutation = useMutation({
+    mutationFn: (data: object) =>
+      fetch("/api/logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }).then(async (r) => {
+        if (r.status === 401) {
+          window.location.href = "/login";
+          throw new Error("Session expired");
+        }
+        if (!r.ok) throw new Error("Failed to log");
+        return r.json();
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["logs"] });
+      toast.success("Pumping logged");
+      handleClose();
+    },
+    onError: () => {
+      toast.error("Failed to log pumping");
+    },
+  });
+
+  const createTimerMutation = useMutation({
+    mutationFn: (data: object) =>
+      fetch("/api/logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }).then(async (r) => {
+        if (r.status === 401) {
+          window.location.href = "/login";
+          throw new Error("Session expired");
+        }
+        if (!r.ok) throw new Error("Failed to start timer");
+        return r.json();
+      }),
+    onSuccess: (data) => {
+      const now = new Date().toISOString();
+      addTimer({
+        logId: data.id,
+        type: "PUMP",
+        startedAt: now,
+        childId: selectedChildId!,
+      });
+      invalidateTimers();
+      queryClient.invalidateQueries({ queryKey: ["logs"] });
+      toast.success("Pumping timer started");
+      handleClose();
+    },
+    onError: () => {
+      toast.error("Failed to start pump timer");
+    },
+  });
+
   const handleClose = () => {
     setAmount(0);
     setSide("BOTH");
     setNotes("");
-    setStartTimer(false);
     onClose();
   };
 
-  const handleSave = () => {
+  const handleLogPumping = () => {
     if (isTimer && logId) {
-      const data: any = {
+      patchMutation.mutate({
         pumpAmount: amount > 0 ? amount : undefined,
         pumpUnit: amount > 0 ? unit : undefined,
         pumpSide: side,
         notes: notes || undefined,
-      };
-      patchMutation.mutate(data);
+      });
       return;
     }
 
@@ -134,7 +151,7 @@ export default function PumpDetailsSheet({ open, onClose, logId, isTimer = false
     }
 
     const now = new Date().toISOString();
-    const data: any = {
+    createLogMutation.mutate({
       type: "PUMP",
       childId: selectedChildId,
       occurredAt: now,
@@ -142,17 +159,30 @@ export default function PumpDetailsSheet({ open, onClose, logId, isTimer = false
       pumpUnit: amount > 0 ? unit : undefined,
       pumpSide: side,
       notes: notes || undefined,
-    };
-
-    if (startTimer) {
-      data.startedAt = now;
-    }
-
-    createMutation.mutate(data);
+    });
   };
 
+  const handleStartTimer = () => {
+    if (!selectedChildId) {
+      toast.error("Please select a child first");
+      return;
+    }
+
+    const now = new Date().toISOString();
+    createTimerMutation.mutate({
+      type: "PUMP",
+      childId: selectedChildId,
+      startedAt: now,
+      occurredAt: now,
+      pumpSide: side,
+      notes: notes || undefined,
+    });
+  };
+
+  const isSaving = createLogMutation.isPending || createTimerMutation.isPending || patchMutation.isPending;
+
   return (
-    <Modal open={open} onClose={handleClose} title={isTimer ? "Pumping timer running" : "Log pumping session"}>
+    <Modal open={open} onClose={handleClose} title={isTimer ? "Pumping timer" : "Log pumping"}>
       <div className="space-y-4">
         {isTimer && (
           <p className="text-sm text-text-secondary">
@@ -213,23 +243,6 @@ export default function PumpDetailsSheet({ open, onClose, logId, isTimer = false
           </div>
         </div>
 
-        {!isTimer && (
-          <button
-            type="button"
-            onClick={() => setStartTimer((prev) => !prev)}
-            className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl border transition-colors ${
-              startTimer
-                ? "bg-primary/10 border-primary text-primary"
-                : "bg-elevated border-border text-text-secondary"
-            }`}
-          >
-            <span className="text-sm font-medium">{startTimer ? "Timer will start" : "Start a timer?"}</span>
-            <span className={`text-xs px-2 py-0.5 rounded-full ${startTimer ? "bg-primary/20 text-primary" : "bg-elevated text-text-muted"}`}>
-              {startTimer ? "Yes" : "No"}
-            </span>
-          </button>
-        )}
-
         <div>
           <label className="block text-sm font-medium text-text-secondary mb-2">Notes</label>
           <textarea
@@ -241,20 +254,20 @@ export default function PumpDetailsSheet({ open, onClose, logId, isTimer = false
           />
         </div>
 
-        <div className="flex gap-3 pt-2">
-          <Button variant="secondary" full onClick={handleClose}>
-            {isTimer ? "Skip" : "Cancel"}
+        {isTimer ? (
+          <Button variant="primary" full onClick={handleLogPumping} disabled={isSaving}>
+            {patchMutation.isPending ? "Saving..." : "Save Details"}
           </Button>
-          <Button variant="primary" full onClick={handleSave} disabled={createMutation.isPending || patchMutation.isPending}>
-            {createMutation.isPending || patchMutation.isPending
-              ? "Saving..."
-              : isTimer
-                ? "Save Details"
-                : startTimer
-                  ? "Start Timer & Log"
-                  : "Log Pumping"}
-          </Button>
-        </div>
+        ) : (
+          <div className="flex gap-3">
+            <Button variant="primary" full onClick={handleLogPumping} disabled={isSaving}>
+              {createLogMutation.isPending ? "Saving..." : "Log Pumping"}
+            </Button>
+            <Button variant="secondary" full onClick={handleStartTimer} disabled={isSaving}>
+              {createTimerMutation.isPending ? "..." : "Timer"}
+            </Button>
+          </div>
+        )}
       </div>
     </Modal>
   );

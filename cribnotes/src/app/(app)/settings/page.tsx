@@ -457,14 +457,24 @@ export default function SettingsPage() {
                 <p className="text-xs text-text-muted mt-2">On iPhone or iPad, install CribNotes to your Home Screen first, then enable notifications from the installed app.</p>
               )}
             </div>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={enableNotifications}
+            <button
+              type="button"
+              role="switch"
+              aria-checked={notificationPermission === "granted" && !!notificationPreferences?.hasSubscription}
               disabled={isSubscribing || notificationPermission === "unsupported" || !vapid?.configured}
+              onClick={enableNotifications}
+              className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                notificationPermission === "granted" && notificationPreferences?.hasSubscription
+                  ? "bg-primary"
+                  : "bg-elevated border-border"
+              } ${isSubscribing ? "opacity-50" : ""}`}
             >
-              <Bell size={16} className="mr-1" /> {isSubscribing ? "Enabling..." : "Enable"}
-            </Button>
+              <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                notificationPermission === "granted" && notificationPreferences?.hasSubscription
+                  ? "translate-x-5"
+                  : "translate-x-0"
+              }`} />
+            </button>
           </div>
 
           {!vapid?.configured && (

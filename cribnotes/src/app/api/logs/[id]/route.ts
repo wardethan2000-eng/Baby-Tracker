@@ -105,6 +105,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
     if (error.name === "ZodError") {
       return NextResponse.json({ error: error.errors }, { status: 400 });
     }
+    console.error("[PATCH /api/logs/:id] Error:", error?.message || error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
