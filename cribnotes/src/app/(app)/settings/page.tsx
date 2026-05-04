@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { signOut } from "next-auth/react";
-import { Bell, Pencil, Trash2, Plus, Download, UserPlus, Smartphone, Check, Loader2, CreditCard } from "lucide-react";
+import { Pencil, Trash2, Plus, Download, UserPlus, Smartphone, Check, Loader2, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
