@@ -5,6 +5,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
+import { useAppStore } from "@/lib/store";
+import { useActiveTimers } from "@/lib/useActiveTimers";
 
 interface NurseDetailsSheetProps {
   open: boolean;
@@ -23,11 +25,14 @@ const sides: { value: NurseSide; label: string }[] = [
 
 export default function NurseDetailsSheet({ open, onClose, logId, isTimer = false }: NurseDetailsSheetProps) {
   const queryClient = useQueryClient();
+  const selectedChildId = useAppStore((s) => s.selectedChildId);
+  const addTimer = useAppStore((s) => s.addTimer);
+  const { invalidateTimers } = useActiveTimers();
   const [duration, setDuration] = useState(0);
   const [side, setSide] = useState<NurseSide>("BOTH");
   const [notes, setNotes] = useState("");
 
-  const mutation = useMutation({
+  const patchMutation = useMutation({
     mutationFn: (data: object) =>
       fetch(`/api/logs/${logId}`, {
         method: "PATCH",
@@ -47,6 +52,63 @@ export default function NurseDetailsSheet({ open, onClose, logId, isTimer = fals
     },
   });
 
+  const createLogMutation = useMutation({
+    mutationFn: (data: object) =>
+      fetch("/api/logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }).then(async (r) => {
+        if (r.status === 401) {
+          window.location.href = "/login";
+          throw new Error("Session expired");
+        }
+        if (!r.ok) throw new Error("Failed to log");
+        return r.json();
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["logs"] });
+      toast.success("Nursing logged");
+      handleClose();
+    },
+    onError: () => {
+      toast.error("Failed to log nursing");
+    },
+  });
+
+  const createTimerMutation = useMutation({
+    mutationFn: (data: object) =>
+      fetch("/api/logs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }).then(async (r) => {
+        if (r.status === 401) {
+          window.location.href = "/login";
+          throw new Error("Session expired");
+        }
+        if (!r.ok) throw new Error("Failed to start timer");
+        return r.json();
+      }),
+    onSuccess: (data) => {
+      const now = new Date().toISOString();
+      addTimer({
+        logId: data.id,
+        type: "NURSE",
+        startedAt: now,
+        childId: selectedChildId!,
+        side,
+      });
+      invalidateTimers();
+      queryClient.invalidateQueries({ queryKey: ["logs"] });
+      toast.success("Nursing timer started");
+      handleClose();
+    },
+    onError: () => {
+      toast.error("Failed to start nurse timer");
+    },
+  });
+
   const handleClose = () => {
     setDuration(0);
     setSide("BOTH");
@@ -54,20 +116,60 @@ export default function NurseDetailsSheet({ open, onClose, logId, isTimer = fals
     onClose();
   };
 
-  const handleSave = () => {
-    if (!logId) return;
-    const data: any = {
-      nurseDuration: isTimer ? undefined : duration,
+  const handleLogNursing = () => {
+    if (isTimer && logId) {
+      patchMutation.mutate({
+        nurseDuration: duration > 0 ? duration : undefined,
+        nurseSide: side,
+        notes: notes || undefined,
+      });
+      return;
+    }
+
+    if (!selectedChildId) {
+      toast.error("Please select a child first");
+      return;
+    }
+
+    const now = new Date().toISOString();
+    createLogMutation.mutate({
+      type: "NURSE",
+      childId: selectedChildId,
+      occurredAt: now,
+      nurseDuration: duration > 0 ? duration : undefined,
       nurseSide: side,
       notes: notes || undefined,
-    };
-    if (isTimer) delete data.nurseDuration;
-    mutation.mutate(data);
+    });
   };
 
+  const handleStartTimer = () => {
+    if (!selectedChildId) {
+      toast.error("Please select a child first");
+      return;
+    }
+
+    const now = new Date().toISOString();
+    createTimerMutation.mutate({
+      type: "NURSE",
+      childId: selectedChildId,
+      startedAt: now,
+      occurredAt: now,
+      nurseSide: side,
+      notes: notes || undefined,
+    });
+  };
+
+  const isSaving = createLogMutation.isPending || createTimerMutation.isPending || patchMutation.isPending;
+
   return (
-    <Modal open={open} onClose={handleClose} title={isTimer ? "Nursing timer running" : "Add nursing details"}>
+    <Modal open={open} onClose={handleClose} title={isTimer ? "Nursing timer" : "Log nursing"}>
       <div className="space-y-4">
+        {isTimer && (
+          <p className="text-sm text-text-secondary">
+            Add duration and side details. Stop the timer from the dashboard when done.
+          </p>
+        )}
+
         {!isTimer && (
           <div>
             <label className="block text-sm font-medium text-text-secondary mb-2">Duration (minutes)</label>
@@ -103,12 +205,6 @@ export default function NurseDetailsSheet({ open, onClose, logId, isTimer = fals
           </div>
         )}
 
-        {isTimer && (
-          <p className="text-sm text-text-secondary">
-            Select the side and add optional notes. The timer is still running — stop it from the dashboard when done.
-          </p>
-        )}
-
         <div>
           <p className="text-sm font-medium text-text-secondary mb-2">Side</p>
           <div className="grid grid-cols-3 gap-2">
@@ -137,12 +233,20 @@ export default function NurseDetailsSheet({ open, onClose, logId, isTimer = fals
           />
         </div>
 
-        <div className="flex gap-3 pt-2">
-          <Button variant="secondary" full onClick={handleClose}>Skip</Button>
-          <Button variant="primary" full onClick={handleSave} disabled={mutation.isPending}>
-            {mutation.isPending ? "Saving..." : "Save Details"}
+        {isTimer ? (
+          <Button variant="primary" full onClick={handleLogNursing} disabled={isSaving}>
+            {patchMutation.isPending ? "Saving..." : "Save Details"}
           </Button>
-        </div>
+        ) : (
+          <div className="flex gap-3">
+            <Button variant="primary" full onClick={handleStartTimer} disabled={isSaving}>
+              {createTimerMutation.isPending ? "..." : "Timer"}
+            </Button>
+            <Button variant="secondary" full onClick={handleLogNursing} disabled={isSaving}>
+              {createLogMutation.isPending ? "Saving..." : "Log Nursing"}
+            </Button>
+          </div>
+        )}
       </div>
     </Modal>
   );

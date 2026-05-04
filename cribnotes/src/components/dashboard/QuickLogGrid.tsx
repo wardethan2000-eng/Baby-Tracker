@@ -13,9 +13,6 @@ import { useAppStore } from "@/lib/store";
 import { useActiveTimers } from "@/lib/useActiveTimers";
 import { format } from "date-fns";
 
-const TIMER_TYPES = ["SLEEP", "NURSE"] as const;
-type TimerType = (typeof TIMER_TYPES)[number];
-
 export default function QuickLogGrid() {
   const queryClient = useQueryClient();
   const selectedChildId = useAppStore((s) => s.selectedChildId);
@@ -49,7 +46,7 @@ export default function QuickLogGrid() {
 
   const pending = logMutation.isPending;
 
-  const startTimer = (type: TimerType) => {
+  const startSleepTimer = () => {
     if (!selectedChildId) {
       toast.error("Please select a child first");
       return;
@@ -57,27 +54,17 @@ export default function QuickLogGrid() {
     const now = new Date().toISOString();
 
     logMutation.mutate(
-      { type, childId: selectedChildId, startedAt: now, occurredAt: now },
+      { type: "SLEEP" as const, childId: selectedChildId, startedAt: now, occurredAt: now },
       {
         onSuccess: (data) => {
           invalidateTimers();
           addTimer({
             logId: data.id,
-            type,
+            type: "SLEEP",
             startedAt: now,
             childId: selectedChildId,
           });
-
-          const labels: Record<string, string> = {
-            SLEEP: "Started sleep timer",
-            NURSE: "Started nursing timer",
-          };
-          toast.success(labels[type]);
-
-          if (type === "NURSE") {
-            setNurseLogId(data.id);
-            setNurseSheetOpen(true);
-          }
+          toast.success("Started sleep timer");
         },
         onError: () => {
           toast.error("Failed to start timer");
@@ -92,8 +79,14 @@ export default function QuickLogGrid() {
       return;
     }
 
-    if (type === "SLEEP" || type === "NURSE") {
-      startTimer(type);
+    if (type === "SLEEP") {
+      startSleepTimer();
+      return;
+    }
+
+    if (type === "NURSE") {
+      setNurseLogId(nurseTimer ? nurseTimer.logId : null);
+      setNurseSheetOpen(true);
       return;
     }
 
@@ -184,7 +177,7 @@ export default function QuickLogGrid() {
           label={nurseTimer ? "Nursing" : "Nursed"}
           color="warning"
           onClick={() => handleLog("NURSE")}
-          disabled={!!nurseTimer || pending}
+          disabled={pending}
           timerLabel={getTimerElapsed(nurseTimer)}
         />
         <QuickLogButton

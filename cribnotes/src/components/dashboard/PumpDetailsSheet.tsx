@@ -260,11 +260,11 @@ export default function PumpDetailsSheet({ open, onClose, logId, isTimer = false
           </Button>
         ) : (
           <div className="flex gap-3">
-            <Button variant="primary" full onClick={handleLogPumping} disabled={isSaving}>
-              {createLogMutation.isPending ? "Saving..." : "Log Pumping"}
-            </Button>
-            <Button variant="secondary" full onClick={handleStartTimer} disabled={isSaving}>
+            <Button variant="primary" full onClick={handleStartTimer} disabled={isSaving}>
               {createTimerMutation.isPending ? "..." : "Timer"}
+            </Button>
+            <Button variant="secondary" full onClick={handleLogPumping} disabled={isSaving}>
+              {createLogMutation.isPending ? "Saving..." : "Log Pumping"}
             </Button>
           </div>
         )}
