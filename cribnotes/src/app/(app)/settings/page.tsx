@@ -69,7 +69,10 @@ export default function SettingsPage() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<PersonRole>("CARETAKER");
   const [exportingChild, setExportingChild] = useState<string | null>(null);
-  const [exportRange, setExportRange] = useState("last30");
+  const [exportRange, setExportRange] = useState<string>("last30");
+  const [exportFormat, setExportFormat] = useState<string>("xlsx");
+  const [exportFrom, setExportFrom] = useState<string>("");
+  const [exportTo, setExportTo] = useState<string>("");
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("default");
   const [isSubscribing, setIsSubscribing] = useState(false);
   const [notificationDebug, setNotificationDebug] = useState<string | null>(null);
@@ -205,107 +208,151 @@ export default function SettingsPage() {
     }
   };
 
+  const getExportDates = () => {
+    const now = new Date();
+    if (exportRange === "custom" && exportFrom) {
+      return {
+        from: new Date(exportFrom),
+        to: exportTo ? new Date(new Date(exportTo).getTime() + 86400000) : undefined,
+      };
+    }
+    if (exportRange === "last30") {
+      return { from: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000), to: undefined };
+    }
+    if (exportRange === "month") {
+      return { from: new Date(now.getFullYear(), now.getMonth(), 1), to: undefined };
+    }
+    return { from: undefined, to: undefined };
+  };
+
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString();
+  const fmtTime = (d: string) => new Date(d).toLocaleTimeString();
+  const fmtDiaper = (t: string | null) => t === "PEE" ? "Pee" : t === "POOP" ? "Poop" : t === "BOTH" ? "Pee + Poop" : "";
+  const fmtSide = (s: string | null) => s === "LEFT" ? "Left" : s === "RIGHT" ? "Right" : s === "BOTH" ? "Both" : s || "";
+
   const handleExport = async (childId: string, childName: string) => {
     setExportingChild(childId);
     try {
-      let from: Date | undefined;
-      let to: Date | undefined;
-      const now = new Date();
-      if (exportRange === "last30") {
-        from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      } else if (exportRange === "month") {
-        from = new Date(now.getFullYear(), now.getMonth(), 1);
-      }
+      const { from, to } = getExportDates();
       const params = new URLSearchParams();
       if (from) params.set("from", from.toISOString());
       if (to) params.set("to", to.toISOString());
 
       const data = await api(`/api/export/${childId}?${params.toString()}`);
-      const ExcelJS = await import("exceljs");
 
-      const wb = new ExcelJS.Workbook();
+      const rangeLabel = exportRange === "custom" ? "custom" : exportRange === "month" ? "this-month" : exportRange === "last30" ? "last-30-days" : "all-time";
 
-      const summarySheet = wb.addWorksheet("Summary");
-      summarySheet.addRow(["CribNotes — " + childName + " Export"]);
-      summarySheet.addRow(["Generated: " + now.toLocaleDateString()]);
-      summarySheet.addRow([]);
-      summarySheet.addRow(["Metric", "Value"]);
-      summarySheet.addRow(["Total Feeds", data.summary.totalFeeds]);
-      summarySheet.addRow(["Total Volume", data.summary.totalVolume + " oz"]);
-      summarySheet.addRow(["Avg Feeds/Day", data.summary.avgFeedsPerDay?.toFixed(1) || "0"]);
-      summarySheet.addRow(["Diaper Changes", data.summary.totalDiapers]);
-      summarySheet.addRow(["Wake Events", data.summary.totalWakes]);
+      if (exportFormat === "csv") {
+        const rows: string[][] = [
+          ["Date", "Time", "Type", "Amount", "Unit", "Side", "Food Name", "Diaper Type", "Duration (min)", "Notes", "Logged By"],
+        ];
+        const addRows = (items: any[], type: string, map: (l: any) => string[]) => {
+          items.forEach((l) => rows.push(map(l)));
+        };
+        addRows(data.feeds, "Feed", (l: any) => [fmtDate(l.occurredAt), fmtTime(l.occurredAt), "Feed", l.feedAmount || "", l.feedUnit || "", "", l.foodName || "", "", "", l.notes || "", l.userName || ""]);
+        addRows(data.diapers, "Diaper", (l: any) => [fmtDate(l.occurredAt), fmtTime(l.occurredAt), "Diaper", "", "", "", "", fmtDiaper(l.diaperType), "", l.notes || "", l.userName || ""]);
+        addRows(data.wakes, "Wake", (l: any) => [fmtDate(l.occurredAt), fmtTime(l.occurredAt), "Wake", "", "", "", "", "", "", l.notes || "", l.userName || ""]);
+        addRows(data.nurses, "Nurse", (l: any) => [fmtDate(l.occurredAt), fmtTime(l.occurredAt), "Nurse", "", "", fmtSide(l.nurseSide), "", "", String(l.nurseDuration || ""), l.notes || "", l.userName || ""]);
+        addRows(data.pumps, "Pump", (l: any) => [fmtDate(l.occurredAt), fmtTime(l.occurredAt), "Pump", l.pumpAmount || "", l.pumpUnit || "", fmtSide(l.pumpSide), "", "", "", l.notes || "", l.userName || ""]);
+        addRows(data.sleeps || [], "Sleep", (l: any) => [fmtDate(l.occurredAt), fmtTime(l.occurredAt), "Sleep", "", "", "", "", "", l.durationMinutes != null ? String(l.durationMinutes) : "", l.notes || "", l.userName || ""]);
+        const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `cribnotes-${childName}-${rangeLabel}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        const ExcelJS = await import("exceljs");
+        const wb = new ExcelJS.Workbook();
 
-      const addSheet = (name: string, headers: string[], rows: any[][]) => {
-        const ws = wb.addWorksheet(name);
-        ws.addRow(headers);
-        rows.forEach((r) => ws.addRow(r));
-      };
+        const summarySheet = wb.addWorksheet("Summary");
+        summarySheet.addRow(["CribNotes — " + childName + " Export"]);
+        summarySheet.addRow(["Generated: " + new Date().toLocaleDateString()]);
+        summarySheet.addRow(["Date Range: " + (data.summary.dateRange || "All time")]);
+        summarySheet.addRow([]);
+        summarySheet.addRow(["Metric", "Value"]);
+        summarySheet.addRow(["Total Feeds", data.summary.totalFeeds]);
+        summarySheet.addRow(["Total Volume", data.summary.totalVolume + " oz"]);
+        summarySheet.addRow(["Avg Feeds/Day", data.summary.avgFeedsPerDay?.toFixed(1) || "0"]);
+        summarySheet.addRow(["Avg Feed Volume", (data.summary.avgFeedVolume || 0) + " oz"]);
+        summarySheet.addRow(["Diaper Changes", data.summary.totalDiapers]);
+        summarySheet.addRow(["Wake Events", data.summary.totalWakes]);
+        summarySheet.addRow(["Nursing Sessions", data.summary.totalNurses]);
+        summarySheet.addRow(["Total Nurse Minutes", data.summary.totalNurseMinutes]);
+        summarySheet.addRow(["Avg Nurse Duration", (data.summary.avgNurseMinutes || 0).toFixed(1) + " min"]);
+        summarySheet.addRow(["Pump Sessions", data.summary.totalPumps]);
+        summarySheet.addRow(["Total Pump Volume", data.summary.totalPumpVolume + " oz"]);
+        summarySheet.addRow(["Sleep Entries", data.summary.totalSleeps]);
+        summarySheet.addRow(["Total Sleep (hrs)", data.summary.totalSleepHours]);
+        for (let i = 1; i <= 4; i++) {
+          const row = summarySheet.getRow(i);
+          if (i <= 3) row.font = { bold: true, size: 13 };
+        }
+        for (let i = 5; i <= 17; i++) {
+          const row = summarySheet.getRow(i);
+          if (row.getCell(1).value) row.getCell(1).font = { bold: true };
+        }
+        summarySheet.getColumn(1).width = 22;
+        summarySheet.getColumn(2).width = 18;
 
-      addSheet("Feed Log", ["Date", "Time", "Amount", "Unit", "Feed Type", "Notes", "Logged By"],
-        data.feeds.map((l: any) => [
-          new Date(l.occurredAt).toLocaleDateString(),
-          new Date(l.occurredAt).toLocaleTimeString(),
-          l.feedAmount || "",
-          l.feedUnit || "",
-          l.feedType || "",
-          l.notes || "",
-          l.userName || "",
-        ]));
+        const styleHeaders = (ws: any) => {
+          const headerRow = ws.getRow(1);
+          headerRow.font = { bold: true };
+          headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE8F0FE" } };
+          ws.columns.forEach((col: any) => {
+            if (col.values) col.width = Math.max(14, String(col.values[0] || "").length + 4);
+          });
+        };
 
-      addSheet("Diaper Log", ["Date", "Time", "Type", "Notes", "Logged By"],
-        data.diapers.map((l: any) => [
-          new Date(l.occurredAt).toLocaleDateString(),
-          new Date(l.occurredAt).toLocaleTimeString(),
-          l.diaperType === "PEE" ? "Pee" : l.diaperType === "POOP" ? "Poop" : l.diaperType === "BOTH" ? "Pee + poop" : "",
-          l.notes || "",
-          l.userName || "",
-        ]));
+        const addSheet = (name: string, headers: string[], rows: any[][]) => {
+          const ws = wb.addWorksheet(name);
+          ws.addRow(headers);
+          rows.forEach((r) => ws.addRow(r));
+          styleHeaders(ws);
+        };
 
-      addSheet("Wake Events", ["Date", "Time", "Notes", "Logged By"],
-        data.wakes.map((l: any) => [
-          new Date(l.occurredAt).toLocaleDateString(),
-          new Date(l.occurredAt).toLocaleTimeString(),
-          l.notes || "",
-          l.userName || "",
-        ]));
+        addSheet("Feed Log", ["Date", "Time", "Amount", "Unit", "Feed Type", "Food Name", "Notes", "Logged By"],
+          data.feeds.map((l: any) => [
+            fmtDate(l.occurredAt), fmtTime(l.occurredAt), l.feedAmount || "", l.feedUnit || "", l.feedType || "", l.foodName || "", l.notes || "", l.userName || "",
+          ]));
 
-      addSheet("Nursing Log", ["Date", "Time", "Duration (min)", "Side", "Notes", "Logged By"],
-        data.nurses.map((l: any) => [
-          new Date(l.occurredAt).toLocaleDateString(),
-          new Date(l.occurredAt).toLocaleTimeString(),
-          l.nurseDuration || "",
-          l.nurseSide || "",
-          l.notes || "",
-          l.userName || "",
-        ]));
+        addSheet("Diaper Log", ["Date", "Time", "Type", "Notes", "Logged By"],
+          data.diapers.map((l: any) => [
+            fmtDate(l.occurredAt), fmtTime(l.occurredAt), fmtDiaper(l.diaperType), l.notes || "", l.userName || "",
+          ]));
 
-      addSheet("Pump Log", ["Date", "Time", "Amount", "Unit", "Notes", "Logged By"],
-        data.pumps.map((l: any) => [
-          new Date(l.occurredAt).toLocaleDateString(),
-          new Date(l.occurredAt).toLocaleTimeString(),
-          l.pumpAmount || "",
-          l.pumpUnit || "",
-          l.notes || "",
-          l.userName || "",
-        ]));
+        addSheet("Wake Events", ["Date", "Time", "Notes", "Logged By"],
+          data.wakes.map((l: any) => [
+            fmtDate(l.occurredAt), fmtTime(l.occurredAt), l.notes || "", l.userName || "",
+          ]));
 
-      addSheet("Sleep Log", ["Date", "Time", "Notes", "Logged By"],
-        (data.sleeps || []).map((l: any) => [
-          new Date(l.occurredAt).toLocaleDateString(),
-          new Date(l.occurredAt).toLocaleTimeString(),
-          l.notes || "",
-          l.userName || "",
-        ]));
+        addSheet("Nursing Log", ["Date", "Time", "Duration (min)", "Side", "Notes", "Logged By"],
+          data.nurses.map((l: any) => [
+            fmtDate(l.occurredAt), fmtTime(l.occurredAt), l.nurseDuration || "", fmtSide(l.nurseSide), l.notes || "", l.userName || "",
+          ]));
 
-      const buffer = await wb.xlsx.writeBuffer();
-      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `cribnotes-${childName}-${exportRange}.xlsx`;
-      a.click();
-      URL.revokeObjectURL(url);
+        addSheet("Pump Log", ["Date", "Time", "Amount", "Unit", "Side", "Notes", "Logged By"],
+          data.pumps.map((l: any) => [
+            fmtDate(l.occurredAt), fmtTime(l.occurredAt), l.pumpAmount || "", l.pumpUnit || "", fmtSide(l.pumpSide), l.notes || "", l.userName || "",
+          ]));
+
+        addSheet("Sleep Log", ["Date", "Time", "Duration (min)", "Notes", "Logged By"],
+          (data.sleeps || []).map((l: any) => [
+            fmtDate(l.occurredAt), fmtTime(l.occurredAt), l.durationMinutes != null ? l.durationMinutes : "", l.notes || "", l.userName || "",
+          ]));
+
+        const buffer = await wb.xlsx.writeBuffer();
+        const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `cribnotes-${childName}-${rangeLabel}.xlsx`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
       toast.success("Export downloaded!");
     } catch {
       toast.error("Export failed");
@@ -613,24 +660,58 @@ export default function SettingsPage() {
       </Modal>
 
       <Modal open={!!exportingChild} onClose={() => setExportingChild(null)} title="Export Data">
-        <div className="space-y-3">
-          <div className="flex gap-2 flex-wrap">
-            {[
-              { key: "all", label: "All Time" },
-              { key: "month", label: "This Month" },
-              { key: "last30", label: "Last 30 Days" },
-            ].map((r) => (
-              <button
-                key={r.key}
-                onClick={() => setExportRange(r.key)}
-                className={`px-3 py-1.5 rounded-full text-sm ${exportRange === r.key ? "bg-primary text-base" : "bg-surface text-text-secondary"}`}
-              >
-                {r.label}
-              </button>
-            ))}
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm font-medium text-text-secondary mb-2">Format</p>
+            <div className="flex gap-2">
+              {[
+                { key: "xlsx", label: "Excel (.xlsx)" },
+                { key: "csv", label: "CSV (.csv)" },
+              ].map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setExportFormat(f.key)}
+                  className={`px-3 py-1.5 rounded-full text-sm ${exportFormat === f.key ? "bg-primary text-base" : "bg-surface text-text-secondary"}`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <Button full onClick={() => exportingChild && handleExport(exportingChild, children.find((c: any) => c.id === exportingChild)?.name || "child")}>
-            Export
+
+          <div>
+            <p className="text-sm font-medium text-text-secondary mb-2">Date Range</p>
+            <div className="flex gap-2 flex-wrap">
+              {[
+                { key: "all", label: "All Time" },
+                { key: "month", label: "This Month" },
+                { key: "last30", label: "Last 30 Days" },
+                { key: "custom", label: "Custom" },
+              ].map((r) => (
+                <button
+                  key={r.key}
+                  onClick={() => setExportRange(r.key)}
+                  className={`px-3 py-1.5 rounded-full text-sm ${exportRange === r.key ? "bg-primary text-base" : "bg-surface text-text-secondary"}`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {exportRange === "custom" && (
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="From" type="date" value={exportFrom} onChange={(e) => setExportFrom(e.target.value)} />
+              <Input label="To" type="date" value={exportTo} onChange={(e) => setExportTo(e.target.value)} />
+            </div>
+          )}
+
+          <Button
+            full
+            disabled={exportRange === "custom" && !exportFrom}
+            onClick={() => exportingChild && handleExport(exportingChild, children.find((c: any) => c.id === exportingChild)?.name || "child")}
+          >
+            <Download size={16} className="mr-1" /> Export
           </Button>
         </div>
       </Modal>

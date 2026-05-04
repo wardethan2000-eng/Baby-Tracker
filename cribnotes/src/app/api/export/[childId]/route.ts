@@ -51,7 +51,16 @@ export async function GET(request: Request, { params }: { params: { childId: str
     const totalVolume = feeds.reduce((sum, f) => sum + (f.feedAmount || 0), 0);
     const days = from && to
       ? Math.max(1, Math.ceil((new Date(to).getTime() - new Date(from).getTime()) / (1000 * 60 * 60 * 24)))
-      : 1;
+      : logs.length > 0
+        ? Math.max(1, Math.ceil((new Date(logs[logs.length - 1].occurredAt).getTime() - new Date(logs[0].occurredAt).getTime()) / (1000 * 60 * 60 * 24)))
+        : 1;
+
+    const totalSleepMinutes = sleeps.reduce((s, sl) => {
+      if (sl.startedAt && sl.endedAt) {
+        return s + (sl.endedAt.getTime() - sl.startedAt.getTime()) / 60000;
+      }
+      return s;
+    }, 0);
 
     return NextResponse.json({
       summary: {
@@ -62,9 +71,13 @@ export async function GET(request: Request, { params }: { params: { childId: str
         totalWakes: wakes.length,
         totalNurses: nurses.length,
         totalNurseMinutes: nurses.reduce((s, n) => s + (n.nurseDuration || 0), 0),
+        avgNurseMinutes: nurses.length > 0 ? nurses.reduce((s, n) => s + (n.nurseDuration || 0), 0) / nurses.length : 0,
         totalPumps: pumps.length,
         totalPumpVolume: pumps.reduce((s, p) => s + (p.pumpAmount || 0), 0),
         totalSleeps: sleeps.length,
+        totalSleepHours: Math.round((totalSleepMinutes / 60) * 10) / 10,
+        avgFeedVolume: totalFeeds > 0 ? Math.round((totalVolume / totalFeeds) * 10) / 10 : 0,
+        dateRange: from && to ? `${new Date(from).toLocaleDateString()} – ${new Date(to).toLocaleDateString()}` : "All time",
       },
       feeds: feeds.map((l) => ({
         id: l.id,
@@ -72,6 +85,7 @@ export async function GET(request: Request, { params }: { params: { childId: str
         feedAmount: l.feedAmount,
         feedUnit: l.feedUnit,
         feedType: l.feedType,
+        foodName: l.foodName,
         notes: l.notes,
         userName: l.user?.name,
       })),
@@ -101,12 +115,16 @@ export async function GET(request: Request, { params }: { params: { childId: str
         occurredAt: l.occurredAt,
         pumpAmount: l.pumpAmount,
         pumpUnit: l.pumpUnit,
+        pumpSide: l.pumpSide,
         notes: l.notes,
         userName: l.user?.name,
       })),
       sleeps: sleeps.map((l) => ({
         id: l.id,
         occurredAt: l.occurredAt,
+        startedAt: l.startedAt,
+        endedAt: l.endedAt,
+        durationMinutes: l.startedAt && l.endedAt ? Math.round((l.endedAt.getTime() - l.startedAt.getTime()) / 60000) : null,
         notes: l.notes,
         userName: l.user?.name,
       })),
