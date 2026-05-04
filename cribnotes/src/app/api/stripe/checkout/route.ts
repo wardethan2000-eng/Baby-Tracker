@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { stripe, getOrCreateCustomerId, STRIPE_CONFIGURED } from "@/lib/stripe";
+import { getStripe, getOrCreateCustomerId, STRIPE_CONFIGURED } from "@/lib/stripe";
 
 export async function POST() {
   if (!STRIPE_CONFIGURED) {
@@ -22,7 +22,7 @@ export async function POST() {
   try {
     const customerId = await getOrCreateCustomerId(session.user.id, session.user.email, session.user.name);
 
-    const checkoutSession = await stripe.checkout.sessions.create({
+    const checkoutSession = await getStripe().checkout.sessions.create({
       customer: customerId,
       mode: "payment",
       line_items: [{ price: priceId, quantity: 1 }],
